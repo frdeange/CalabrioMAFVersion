@@ -1,17 +1,23 @@
-# Sprint 0 Plan — 8 Spikes (S1–S8)
+# Decisions Log
 
-**By:** Morpheus (Lead / Architect)
-**Date planned:** 2026-05-19T12:59:43Z
+**Last updated:** 2026-05-19T13:38:00Z
 
-## What
+---
+
+## 2026-05-19 — Sprint 0 Plan — 8 Spikes (S1–S8)
+
+**By:** Morpheus (Lead / Architect)  
+**Recorded:** 2026-05-19T13:38:00Z (via Scribe merge from inbox)
+
+### What
 
 Sprint 0 (Fase 0a) is the 8-spike validation gate defined in §9.6 of `propuesta-arquitectura-modernizada.md`. Each spike validates one technical assumption that — if wrong — would force an architecture pivot. RED on any spike triggers the documented Plan B (also defined in §9.6, column "Plan B si falla").
 
-## Why
+### Why
 
 §9.6 is explicit: *"NO empieces a construir sin haber validado los spikes. Si algún spike sale RED, ajusta el diseño antes de avanzar."* (§9.6, §11 closing recommendations). We commit to the gate before committing to the design.
 
-## The 8 spikes
+### The 8 spikes
 
 | # | Title | Owner | Reviewer | Issue | Plan B (from §9.6) |
 |---|-------|-------|----------|-------|--------------------|
@@ -26,24 +32,24 @@ Sprint 0 (Fase 0a) is the 8-spike validation gate defined in §9.6 of `propuesta
 
 **Decision deadline (per spike):** End of Sprint 0 — target 2026-05-26 (≈ 5 working days from 2026-05-19 kickoff per §10.1).
 
-## Ownership split actually used
+### Ownership split actually used
 
 - **Mouse:** S1, S2, S3, S4, S6, S7 (all MAF / FoundryAgent / Workflow / MCP-client surface area)
 - **Tank:** S5, S8 (cross-hop OTel propagation through APIM; Foundry ↔ AOAI Private Endpoint network primitive)
 
-**§9.6 vs prior coordinator analysis:** §9.6 *does not* explicitly assign owners — it only lists spike, hypothesis, validation, Plan B. The split above therefore matches the prior coordinator analysis verbatim. Recording it here so it's the canonical Sprint-0 assignment.
+§9.6 *does not* explicitly assign owners — it only lists spike, hypothesis, validation, Plan B. The split above therefore matches the prior coordinator analysis verbatim. Recording it here so it's the canonical Sprint-0 assignment.
 
-## Plan B options
+### Plan B options
 
 Plan B is **defined per spike in §9.6** (column 5) and copied into the table above. No spike is missing a Plan B definition.
 
-## Exit criteria for Sprint 0
+### Exit criteria for Sprint 0
 
 - All 8 spikes resolved (GREEN, or AMBER with mitigation in `.squad/decisions.md`, or RED with Plan B activated + arch-pivot proposal merged).
 - 0 unmitigated RED verdicts.
 - Morpheus signs off in `.squad/decisions.md` to authorize Fase 0b kickoff (§10.2 — Fase 0a DoD: *"Todos los spikes S1–S8 con veredicto documentado en `spike-results.md`. Cualquier RED tiene plan B aplicado y aprobado por el tech lead."*).
 
-## Ambiguities for Kiko to resolve
+### Ambiguities for Kiko to resolve
 
 These do **not** block the planning gate — but they do affect spike execution. Flagging now:
 
@@ -54,8 +60,10 @@ These do **not** block the planning gate — but they do affect spike execution.
 3. **S5 dependency on APIM.** Full E2E `traceparent` validation ideally goes through APIM. APIM provisioning is also part of the deferred IaC. Spike body proposes a reverse-proxy stub as an acceptable substitute; confirm that satisfies the "end-to-end" intent of §9.6 / §6.
 4. **Sprint 0 duration.** §10.1 says 5 working days; the task brief mentioned "~10 working days". Issues use 5 days (matches §10.1, target 2026-05-26). Confirm we want to stick to 5.
 
-## Decision
+### Status
 
-Sprint 0 is **planned**. 8 issues open. `docs/spike-results.md` template committed. Mouse owns 6 spikes; Tank owns 2. Plan B options are defined per §9.6 for every spike. No RED verdicts can be acted on until ambiguities above are resolved (specifically the S8 manual-provisioning question if S8 goes RED).
+Sprint 0 is **planned**. 8 issues open (#2–#9). `docs/spike-results.md` template committed. Mouse owns 6 spikes; Tank owns 2. Plan B options are defined per §9.6 for every spike. No RED verdicts can be acted on until ambiguities above are resolved (specifically the S8 manual-provisioning question if S8 goes RED).
 
 Reviewer protocol reminder: on any spike-PR rejection, a different agent revises (per "Reviewer protocol — strict lockout" decision).
+
+---
