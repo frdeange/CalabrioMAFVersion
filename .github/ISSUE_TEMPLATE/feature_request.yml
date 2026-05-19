@@ -1,0 +1,35 @@
+name: "✨ Feature Request"
+description: Propose new product or platform capability.
+title: "✨ [Feature] "
+labels:
+  - kind:feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What user or platform problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe scope, behavior, and acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Scope aligned with phase\n- [ ] Implementation completed\n- [ ] Tests and telemetry updated\n- [ ] Security and docs reviewed"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:2-agents"
+    validations:
+      required: true
+
