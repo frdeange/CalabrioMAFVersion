@@ -65,3 +65,11 @@
 - Staged .squad/routing.md (existed locally, never committed)
 - For append-only files (orchestration-log, agent histories), used POST-WRITE CLARIFICATION pattern: appended a corrective note at the end of the file rather than editing existing lines. Preserves historical accuracy while addressing factual concerns.
 - Pattern learned: when Copilot flags an "incorrect state" claim in an append-only file, ASK if the claim was accurate-at-time-of-writing. If yes (history) → preserve. If no (current-state assertion that turned out wrong) → append correction.
+
+## 2026-05-19 — PR #1 Copilot Round 3 (commit pending)
+
+Addressed 2 new comments from Copilot Code Review round 3:
+- `.github/scripts/sync-labels.ps1`: split label ownership — removed squad/squad:* entries; sync-squad-labels.yml is now the single source of truth for squad governance labels.
+- `.github/workflows/squad-issue-assign.yml`: guarded @copilot assignment step with `env.COPILOT_ASSIGN_TOKEN != ''` check, gated the prior acknowledgment step to avoid contradictory success message, added explicit user-facing warning comment when the PAT is missing.
+
+Rubber-duck (via Coordinator) caught a blind spot: the original plan would have posted both "@copilot has been assigned" AND "cannot assign" — fixed by adding `if:` guard to the earlier step.

@@ -49,15 +49,13 @@ $labels = @(
     @{ Name = "phase:5-apim-sec"; Color = "c297ff"; Description = "Phase 5 - APIM and security controls" },
     @{ Name = "phase:6-obs"; Color = "cfb3ff"; Description = "Phase 6 - observability" },
     @{ Name = "phase:7-hardening"; Color = "d8b9ff"; Description = "Phase 7 - hardening and pentest readiness" },
-    @{ Name = "phase:8-tuning"; Color = "e2c5ff"; Description = "Phase 8 - tuning and optimization" },
-    @{ Name = "squad"; Color = "fb8f44"; Description = "Squad inbox / untriaged issue" },
-    @{ Name = "squad:morpheus"; Color = "d97706"; Description = "Assigned to Morpheus (Lead)" },
-    @{ Name = "squad:trinity"; Color = "ea580c"; Description = "Assigned to Trinity (Frontend)" },
-    @{ Name = "squad:tank"; Color = "f97316"; Description = "Assigned to Tank (Backend)" },
-    @{ Name = "squad:mouse"; Color = "f59e0b"; Description = "Assigned to Mouse (MAF)" },
-    @{ Name = "squad:apoc"; Color = "fb923c"; Description = "Assigned to Apoc (QA)" },
-    @{ Name = "squad:oracle"; Color = "fdba74"; Description = "Assigned to Oracle (Security)" },
-    @{ Name = "squad:switch"; Color = "ffb77c"; Description = "Assigned to Switch (DevOps)" }
+    @{ Name = "phase:8-tuning"; Color = "e2c5ff"; Description = "Phase 8 - tuning and optimization" }
+    # NOTE: The "squad", "squad:*", and "squad:copilot" labels are NOT managed here.
+    # They are owned by .github/workflows/sync-squad-labels.yml which dynamically
+    # parses .squad/team.md to stay in sync with the current roster. That workflow
+    # also owns go:*, release:*, type:*, bug, feedback, and priority:* labels.
+    # DO NOT add squad* entries to this script — keeping both files authoritative
+    # would cause the squad labels to flip palette/description on each sync run.
 )
 
 foreach ($label in $labels) {
