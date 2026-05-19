@@ -1,0 +1,17 @@
+# CODEOWNERS — materializes .squad/routing.md "Required Reviewers" table
+# AI squad members are tracked via squad:{name} issue labels.
+# Until human/team handles are mapped to squad roles, the following uses
+# the repo owner as default reviewer and adds a clear comment per path
+# indicating the squad reviewer(s) expected.
+* @frdeange
+/apps/agent-host/** @frdeange # squad reviewer: mouse + tank
+/apps/mcp-schema/** @frdeange # squad reviewer: oracle + tank
+/apps/mcp-sqlexec/** @frdeange # squad reviewer: oracle + tank (4 guardrail layers)
+/apps/agent-host/middleware/** @frdeange # squad reviewer: oracle + mouse
+/apim/** @frdeange # squad reviewer: oracle + tank
+/infra/** @frdeange # squad reviewer: oracle + switch (Fase 0b)
+/apps/web/** @frdeange # squad reviewer: trinity
+/.github/** @frdeange # squad reviewer: switch + oracle
+/tests/** @frdeange # squad reviewer: apoc
+/.squad/decisions.md @frdeange # squad reviewer: morpheus
+
