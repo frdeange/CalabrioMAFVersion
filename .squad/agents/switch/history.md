@@ -1,0 +1,41 @@
+# Project Context
+
+- **Owner:** Kiko de Ángel
+- **Project:** WFM Supervisor Assist — GitFlow, issues con emoji+tags, PRs con required reviewers según área, GitHub Actions (lint / test / coverage / security scan / build / push), Dockerfiles para 3 apps (agent-host, mcp-schema, mcp-sqlexec), CODEOWNERS automatizado.
+- **Stack:** GitHub Actions · gh CLI · Docker (multi-stage) · GHCR (container registry) · KV refs · GitHub OIDC · Dependabot · commitlint · semantic-release (opcional)
+- **Architecture proposal:** `C:\repos\copilotCLIContainer\propuesta-arquitectura-modernizada.md` (§9.5 estructura repo, §10 plan por fases)
+- **Created:** 2026-05-19
+- **Universe:** The Matrix
+
+## Learnings
+
+<!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-05-19: Initial context
+- **DevOps estricto desde día 1** (decisión de Kiko): todo trabajo va por GitHub Issue → branch → PR → merge. Issue templates con emoji visualmente escaneables (🐛 ✨ 🔐 🧪 📚 🏗️ 🔍 🔧 🚀).
+- **Labels duales:** `area:*` (dominio técnico) + `phase:*` (fase del plan). Permite filtrar el backlog por fase activa.
+- **CODEOWNERS automatiza required reviewers** — Oracle obligatorio en cualquier path que toque seguridad; Morpheus en contratos cross-cutting.
+- **Conventional Commits enforced** — habilita changelog automático más adelante.
+- **Pin actions a SHA** — supply-chain hygiene. `@v1` está prohibido salvo en `develop` para experimentos.
+- **Tarea #1 al arrancar:** montar plantillas, labels, branch protection, GHA `pr-validation.yml` base. Antes de que el resto del equipo abra un solo PR.
+
+### 2026-05-19: DevOps foundations bootstrap
+- Repo metadata discovered: owner login `frdeange`, default branch `master`.
+- `develop` branch did not exist; created from `master` and pushed.
+- Branch protection applied successfully on `master` and `develop`, including signed commits, linear history, required checks, code-owner review, admin enforcement, no force-push/deletes, and conversation resolution.
+- Secret scanning and push protection were enabled successfully (public repo); no GHAS blocker encountered.
+- PR created for bootstrap branch: `#1` — https://github.com/frdeange/CalabrioMAFVersion/pull/1
+- Key paths created:
+  - `.github/ISSUE_TEMPLATE/*.yml` and `.github/ISSUE_TEMPLATE/config.yml`
+  - `.github/pull_request_template.md`
+  - `.github/CODEOWNERS`
+  - `.github/scripts/sync-labels.ps1`
+  - `.github/scripts/triage-issue.ps1`
+  - `.github/workflows/pr-validation.yml`
+  - `.github/workflows/secret-scan.yml`
+  - `.github/workflows/commitlint.yml`
+  - `.github/dependabot.yml`
+  - `.github/branch-protection.master.json`
+  - `.github/branch-protection.develop.json`
+  - `.commitlintrc.json`
+  - `.squad/decisions/inbox/switch-devops-foundations.md`
