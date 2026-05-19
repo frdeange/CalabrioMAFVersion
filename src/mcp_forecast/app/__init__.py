@@ -1,0 +1,1 @@
+"""MCP Forecast service package."""
