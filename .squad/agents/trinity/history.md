@@ -25,3 +25,11 @@
 - **CODEOWNERS auto-routing** now active. GitHub assigns reviewers per path.
 - All team PRs now follow Conventional Commits + branch protection on `master` and `develop`.
 - Reference: `.squad/decisions.md` § "Switch — DevOps Foundations Bootstrap"
+
+### 2026-05-19: Team update — Sprint 0 planning delivered
+- Morpheus delivered Sprint 0 plan (PR #10, `squad/sprint-0-planning` branch) with 8 spike issues (#2–#9).
+- **Sprint 0 gate:** 5 working days, target 2026-05-26. Validates 8 assumptions before committing design (§9.6).
+- **Spike assignments:** Mouse (#2 S1, #3 S2, #4 S3, #5 S4, #7 S6, #8 S7) · Tank (#6 S5, #9 S8) · Oracle co-reviews on #3, #4, #9
+- **Spike-results.md** tracker committed; verdicts logged as spikes complete.
+- **4 ambiguities flagged for Kiko** (recorded in `.squad/decisions.md`): owner confirmation, S8 sandbox approval, S5 APIM stub, Sprint 0 duration.
+- Reference: `.squad/orchestration-log/2026-05-19T133800Z-morpheus.md`
