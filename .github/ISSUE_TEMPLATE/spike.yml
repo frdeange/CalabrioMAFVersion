@@ -1,0 +1,52 @@
+name: "🔍 Spike"
+description: Time-boxed investigation before implementation.
+title: "🔍 [Spike] "
+labels:
+  - kind:spike
+  - phase:0a-spike
+body:
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+      description: What do we believe is true and why?
+    validations:
+      required: true
+  - type: textarea
+    id: validation_method
+    attributes:
+      label: Validation Method
+      description: How will the hypothesis be tested? Include metrics/evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: verdict_criteria
+    attributes:
+      label: GREEN / AMBER / RED Criteria
+      description: Define explicit verdict thresholds.
+      value: "GREEN:\n- \n\nAMBER:\n- \n\nRED:\n- "
+    validations:
+      required: true
+  - type: input
+    id: decision_deadline
+    attributes:
+      label: Decision Deadline
+      description: Date/time by which the spike must produce a verdict.
+      placeholder: "2026-05-19T12:55:46Z"
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Evidence collected\n- [ ] Verdict documented (GREEN/AMBER/RED)\n- [ ] Follow-up issue(s) opened\n- [ ] Decision shared in .squad/decisions/inbox/"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "phase:0a-spike"
+    validations:
+      required: true
+
