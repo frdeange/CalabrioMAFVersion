@@ -21,3 +21,29 @@ Use this pattern when initializing repository governance before feature delivery
 - Reproducible: all policy state is in code + scripts.
 - Idempotent: reruns converge to desired state.
 - Safe: branch protections and scanning are enforced before broad PR activity.
+
+## Default Branch Rename
+
+Use GitHub's atomic branch-rename API so redirects, default-branch change, PR retargeting, and protection migration are handled server-side in one operation:
+
+```bash
+gh api -X POST /repos/{owner}/{repo}/branches/{old}/rename -f new_name={new}
+```
+
+Then verify with:
+
+1. `gh repo view {owner}/{repo} --json defaultBranchRef`
+2. `gh pr list --state open --json number,baseRefName,headRefName`
+3. `gh api /repos/{owner}/{repo}/branches/{new}/protection`
+
+## Gotchas after rename
+
+- Workflow branch filters in `.github/workflows/*.yml` (`on.push.branches` / `on.pull_request.branches`)
+- `.github/dependabot.yml` `target-branch` values
+- Branch-protection config filenames (for example `branch-protection.master.json` → `branch-protection.main.json`)
+- CODEOWNERS comments/docs that describe the default branch by name
+- Governance scripts/docs that mention `master`
+
+## Confidence
+
+- medium

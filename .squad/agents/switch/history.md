@@ -39,3 +39,22 @@
   - `.github/branch-protection.develop.json`
   - `.commitlintrc.json`
   - `.squad/decisions/inbox/switch-devops-foundations.md`
+
+### 2026-05-19: Default branch rename `master` → `main`
+- Atomic rename command used: `gh api -X POST /repos/frdeange/CalabrioMAFVersion/branches/master/rename -f new_name=main`.
+- Verification queries used:
+  - `gh repo view frdeange/CalabrioMAFVersion --json defaultBranchRef`
+  - `gh pr list --state open --json number,title,baseRefName,headRefName`
+  - `gh api /repos/frdeange/CalabrioMAFVersion/branches/main/protection`
+- Surprise observed: `gh repo view` briefly returned `master` immediately after the rename response, then converged to `main` after local fetch/head sync.
+- Branch protection transferred fully (including required signatures); no manual re-apply was needed.
+- New state: default branch is `main`; PR #1 branch updated/rebased with `main` references and force-pushed; PR #10 is retargeted to `main`.
+- Reference: `.squad/decisions.md` § "Switch — DevOps Foundations Bootstrap"
+
+### 2026-05-19: Team update — Sprint 0 planning delivered
+- Morpheus delivered Sprint 0 plan (PR #10, `squad/sprint-0-planning` branch) with 8 spike issues (#2–#9).
+- **Sprint 0 gate:** 5 working days, target 2026-05-26. Validates 8 assumptions before committing design (§9.6).
+- **Switch action:** PR #10 now on target for auto-retarget if master→main rename completes; no file collisions (different branch).
+- **Spike-results.md** tracker committed; verdicts logged as spikes complete.
+- **4 ambiguities flagged for Kiko** (recorded in `.squad/decisions.md`): owner confirmation, S8 sandbox approval, S5 APIM stub, Sprint 0 duration.
+- Reference: `.squad/orchestration-log/2026-05-19T133800Z-morpheus.md`

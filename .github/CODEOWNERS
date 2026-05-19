@@ -1,4 +1,4 @@
-# CODEOWNERS — materializes .squad/routing.md "Required Reviewers" table
+# CODEOWNERS — materializes .squad/routing.md "Required Reviewers" table (default branch: main)
 # AI squad members are tracked via squad:{name} issue labels.
 # Until human/team handles are mapped to squad roles, the following uses
 # the repo owner as default reviewer and adds a clear comment per path
