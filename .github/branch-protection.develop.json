@@ -6,7 +6,8 @@
       "unit-tests",
       "coverage",
       "security-scan",
-      "commitlint"
+      "commitlint",
+      "container-build"
     ]
   },
   "enforce_admins": true,

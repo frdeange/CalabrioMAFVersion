@@ -58,3 +58,10 @@
 - **Spike-results.md** tracker committed; verdicts logged as spikes complete.
 - **4 ambiguities flagged for Kiko** (recorded in `.squad/decisions.md`): owner confirmation, S8 sandbox approval, S5 APIM stub, Sprint 0 duration.
 - Reference: `.squad/orchestration-log/2026-05-19T133800Z-morpheus.md`
+
+### 2026-05-19 (PM): PR #1 Copilot review round 2
+- Unified actions/checkout SHA across all 8 workflows (v4.3.1 → v6.0.2) — supply chain audit consistency
+- Added container-build to required_status_checks contexts in both branch-protection JSONs
+- Staged .squad/routing.md (existed locally, never committed)
+- For append-only files (orchestration-log, agent histories), used POST-WRITE CLARIFICATION pattern: appended a corrective note at the end of the file rather than editing existing lines. Preserves historical accuracy while addressing factual concerns.
+- Pattern learned: when Copilot flags an "incorrect state" claim in an append-only file, ASK if the claim was accurate-at-time-of-writing. If yes (history) → preserve. If no (current-state assertion that turned out wrong) → append correction.

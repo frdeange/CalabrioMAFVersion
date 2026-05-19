@@ -26,3 +26,7 @@
 - **CODEOWNERS auto-routing** now active. GitHub assigns reviewers per path.
 - All team PRs now follow Conventional Commits + branch protection on `master` and `develop`.
 - Reference: `.squad/decisions.md` § "Switch — DevOps Foundations Bootstrap"
+
+### 2026-05-19: Coordinator clarification (post-rename)
+
+Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
