@@ -47,7 +47,7 @@
 
 ### 2026-05-19: Switch — DevOps Foundations Bootstrap
 **By:** Switch (for Kiko de Ángel)
-**What:** GitHub issue templates (9 types + config.yml), PR template with reviewer lockout reminder, CODEOWNERS from `.squad/routing.md`, label sync script, branch protection for `master` and `develop`, CI/CD scaffolding (pr-validation, secret-scan, commitlint workflows), Dependabot, triage helper script, and secret scanning enabled.
+**What:** GitHub issue templates (9 types + config.yml), PR template with reviewer lockout reminder, CODEOWNERS from `.squad/routing.md`, label sync script, branch protection for `main` and `develop` (initially `master`, renamed to `main` as part of this same bootstrap), CI/CD scaffolding (pr-validation, secret-scan, commitlint workflows), Dependabot, triage helper script, and secret scanning enabled.
 **Why:** Foundation for audit trail, CODEOWNERS automation, required reviewer routing, Conventional Commits enforcement, and supply-chain security before team opens first PRs.
 **Status:** PR #1 (draft) on `squad/0-devops-foundations`
 

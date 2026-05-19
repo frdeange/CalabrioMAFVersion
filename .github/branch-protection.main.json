@@ -5,7 +5,8 @@
       "lint",
       "unit-tests",
       "coverage",
-      "security-scan"
+      "security-scan",
+      "commitlint"
     ]
   },
   "enforce_admins": true,
@@ -20,4 +21,3 @@
   "allow_deletions": false,
   "required_conversation_resolution": true
 }
-
