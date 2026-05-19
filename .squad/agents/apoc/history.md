@@ -1,0 +1,29 @@
+# Project Context
+
+- **Owner:** Kiko de Ángel
+- **Project:** WFM Supervisor Assist — Tests unit ≥80%, 10 escenarios E2E canónicos, tests por capa de guardrail con sqlglot assertions, corpus adversarial de prompt injection, soporte de pentest interno (con Oracle).
+- **Stack:** pytest · pytest-asyncio · hypothesis · sqlglot · Faker · Cypress / Playwright · `pytest-cov` · GitHub Actions
+- **Architecture proposal:** `C:\repos\copilotCLIContainer\propuesta-arquitectura-modernizada.md` (§3 Defense in Depth, §10.2 DoD por fase)
+- **Repo path:** `tests/unit/`, `tests/e2e/`, `tests/corpora/`
+- **Created:** 2026-05-19
+- **Universe:** The Matrix
+
+## Learnings
+
+<!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-05-19: Initial context
+- **10 escenarios E2E canónicos** son requisito de Fase 4 DoD — bloqueantes para cierre de fase.
+- **Coverage ≥80%** medido con `pytest --cov`, gate en CI gestionado por Switch.
+- **RED + GREEN tests por capa de guardrail** — no se acepta una capa con sólo tests felices. Cada capa de las 4 del MCP SQL Executor tiene tests dedicados.
+- **SQL parsed assertions** — sqlglot para verificar que `WHERE TeamName IN (...)` se inyecta correctamente y que vistas no whitelisted son rechazadas en AST, no en runtime SQL.
+- **Corpus adversarial versionado** en `tests/corpora/` — prompt injection, SQL injection, PII leak vectors. Mantenido como artefacto, no como código volátil.
+- **Pentest interno** (Fase 7) coordinado con Oracle. Mi rol: convertir findings en tests reproducibles.
+
+### 2026-05-19: Team update — DevOps foundations in flight
+- Switch completed DevOps bootstrap (PR #1 on `squad/0-devops-foundations`).
+- **Issue templates:** 🐛 bug · ✨ feature · 🔐 security · 🧪 test · 📚 docs · 🏗️ infra · 🔍 spike · 🔧 chore · 🚀 release
+- **Labels:** `area:*` (technical domain) + `phase:0a-spike` through `phase:8-tuning`
+- **CODEOWNERS auto-routing** now active. GitHub assigns reviewers per path.
+- All team PRs now follow Conventional Commits + branch protection on `master` and `develop`.
+- Reference: `.squad/decisions.md` § "Switch — DevOps Foundations Bootstrap"
