@@ -24,7 +24,7 @@ jobs:
         # Suppress the "assigned" acknowledgment for squad:copilot when no PAT is configured;
         # the dedicated warning step below posts the correct user-facing message instead.
         if: github.event.label.name != 'squad:copilot' || env.COPILOT_ASSIGN_TOKEN != ''
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
@@ -124,7 +124,7 @@ jobs:
       - name: Assign @copilot coding agent
         if: github.event.label.name == 'squad:copilot' && env.COPILOT_ASSIGN_TOKEN != ''
         continue-on-error: true
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ env.COPILOT_ASSIGN_TOKEN }}
           script: |
@@ -172,7 +172,7 @@ jobs:
       # Without this, the acknowledgment step is suppressed and the user gets no feedback.
       - name: Warn when COPILOT_ASSIGN_TOKEN is missing
         if: github.event.label.name == 'squad:copilot' && env.COPILOT_ASSIGN_TOKEN == ''
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const issue_number = context.payload.issue.number;
