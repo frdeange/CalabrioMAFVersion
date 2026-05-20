@@ -234,9 +234,9 @@ BEGIN TRY
             @BuId,
             a.agent_id,
             t.absence_type_id,
-            req.start_date,
-            DATEADD(DAY, req.duration_days - 1, req.start_date) AS end_date,
-            req.status,
+            src.start_date,
+            DATEADD(DAY, src.duration_days - 1, src.start_date) AS end_date,
+            src.status,
             req.requested_at,
             req.decided_by,
             req.decided_at
