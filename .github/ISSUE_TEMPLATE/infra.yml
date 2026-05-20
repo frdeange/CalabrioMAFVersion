@@ -1,0 +1,35 @@
+name: "🏗️ Infra/IaC"
+description: Infrastructure, environments, networking, and deployment concerns.
+title: "🏗️ [Infra] "
+labels:
+  - kind:infra
+body:
+  - type: textarea
+    id: infra_change
+    attributes:
+      label: Infrastructure Change
+      description: Describe infra components and expected impact.
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback / Safety Plan
+      description: Explain failure detection and rollback approach.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] IaC or pipeline change committed\n- [ ] Deployment path reproducible\n- [ ] Security controls validated\n- [ ] Ops docs updated"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:0b-foundations"
+    validations:
+      required: true
+

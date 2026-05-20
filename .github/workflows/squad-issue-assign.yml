@@ -13,11 +13,18 @@ jobs:
     # Only trigger on squad:{member} labels (not the base "squad" label)
     if: startsWith(github.event.label.name, 'squad:')
     runs-on: ubuntu-latest
+    env:
+      # Expose PAT to the job so steps can check `env.COPILOT_ASSIGN_TOKEN != ''` in `if:`
+      # (secrets.* cannot be referenced directly in `if:` expressions).
+      COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Identify assigned member and trigger work
-        uses: actions/github-script@v7
+        # Suppress the "assigned" acknowledgment for squad:copilot when no PAT is configured;
+        # the dedicated warning step below posts the correct user-facing message instead.
+        if: github.event.label.name != 'squad:copilot' || env.COPILOT_ASSIGN_TOKEN != ''
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const fs = require('fs');
@@ -115,16 +122,17 @@ jobs:
 
       # Separate step: assign @copilot using PAT (required for coding agent)
       - name: Assign @copilot coding agent
-        if: github.event.label.name == 'squad:copilot'
-        uses: actions/github-script@v7
+        if: github.event.label.name == 'squad:copilot' && env.COPILOT_ASSIGN_TOKEN != ''
+        continue-on-error: true
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
-          github-token: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+          github-token: ${{ env.COPILOT_ASSIGN_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.payload.issue.number;
 
-            // Get the default branch name (main, master, etc.)
+            // Get the current default branch name
             const { data: repoData } = await github.rest.repos.get({ owner, repo });
             const baseBranch = repoData.default_branch;
 
@@ -159,3 +167,30 @@ jobs:
                 core.warning(`Fallback also failed: ${err2.message}`);
               }
             }
+
+      # Posts a clear warning comment if squad:copilot is applied without the required PAT.
+      # Without this, the acknowledgment step is suppressed and the user gets no feedback.
+      - name: Warn when COPILOT_ASSIGN_TOKEN is missing
+        if: github.event.label.name == 'squad:copilot' && env.COPILOT_ASSIGN_TOKEN == ''
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const issue_number = context.payload.issue.number;
+            const body = [
+              '### ⚠️ Copilot coding agent could not be auto-assigned',
+              '',
+              `**Issue:** #${issue_number} — ${context.payload.issue.title}`,
+              '',
+              'The `squad:copilot` label was applied, but the `COPILOT_ASSIGN_TOKEN` secret is not configured for this repository.',
+              '',
+              '**To resolve:** configure the `COPILOT_ASSIGN_TOKEN` repository secret (PAT with `repo` + `workflow` scopes) in **Settings → Secrets and variables → Actions**, then re-apply the label.',
+              '',
+              'Alternatively, manually assign `@copilot` to this issue from the sidebar.'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });
+            core.warning('COPILOT_ASSIGN_TOKEN not configured — posted user-facing warning comment.');
