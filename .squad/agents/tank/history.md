@@ -39,6 +39,11 @@
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
 
+### 2026-05-20: WFM SQL baseline for dynamic schema discovery
+- Sprint 1 data foundation is now modeled in SQL Server with 4 operational schemas (`wfm`, `absence`, `overtime`, `scheduling`) plus `_metadata` for LLM-driven schema discovery.
+- `analytics` views were treated as the canonical query surface for LLMs, with stable naming and `bu_id` scoping in each view.
+- Seed strategy is deterministic and idempotent: one demo BU, 50 agents, realistic distributions for absence/overtime/shift activity, and metadata catalog entries describing tables, columns, and joins.
+- UAI access is now read-only by policy (`db_datareader` + SELECT on `analytics` and `_metadata`, explicitly removing `db_datawriter` membership).
 ## Team Update — 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.
