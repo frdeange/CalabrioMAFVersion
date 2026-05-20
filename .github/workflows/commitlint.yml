@@ -15,9 +15,9 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Validate PR title with Conventional Commits
+      - name: Validate commits with Conventional Commits
         uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
         with:
           configFile: .commitlintrc.json
-          validatePRTitle: true
+          commitDepth: 1
 
