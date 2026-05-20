@@ -1,0 +1,36 @@
+name: "🔐 Security Issue"
+description: Report a security concern or hardening task.
+title: "🔐 [Security] "
+labels:
+  - kind:security
+  - squad:oracle
+body:
+  - type: textarea
+    id: risk
+    attributes:
+      label: Security Risk
+      description: Describe the vulnerability, affected components, and blast radius.
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Proposed Mitigation
+      description: Include immediate controls and long-term remediation.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Risk validated and triaged\n- [ ] Mitigation implemented\n- [ ] Security review completed\n- [ ] Follow-up controls tracked"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:5-apim-sec"
+    validations:
+      required: true
+

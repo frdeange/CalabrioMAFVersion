@@ -1,0 +1,70 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    commit-message:
+      prefix: "chore(deps-actions)"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    commit-message:
+      prefix: "chore(deps-docker)"
+
+  # TODO: Enable these when app directories and manifests land.
+  # Dependabot security updates are handled on the default branch by GitHub.
+  # - package-ecosystem: "pip"
+  #   directory: "/apps/agent-host"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-pip)"
+  # - package-ecosystem: "pip"
+  #   directory: "/apps/mcp-schema"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-pip)"
+  # - package-ecosystem: "pip"
+  #   directory: "/apps/mcp-sqlexec"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-pip)"
+  # - package-ecosystem: "npm"
+  #   directory: "/apps/web"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-npm)"
+  # - package-ecosystem: "docker"
+  #   directory: "/apps/agent-host"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-docker)"
+  # - package-ecosystem: "docker"
+  #   directory: "/apps/mcp-schema"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-docker)"
+  # - package-ecosystem: "docker"
+  #   directory: "/apps/mcp-sqlexec"
+  #   schedule:
+  #     interval: "weekly"
+  #   target-branch: "develop"
+  #   commit-message:
+  #     prefix: "chore(deps-docker)"
+

@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Architecture Proposal (Modernized)"
+    url: "https://github.com/frdeange/copilotCLIContainer/blob/main/propuesta-arquitectura-modernizada.md"
+    about: "Reference architecture baseline used by this project."
+

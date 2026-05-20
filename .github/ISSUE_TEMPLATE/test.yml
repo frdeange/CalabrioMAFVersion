@@ -1,0 +1,35 @@
+name: "🧪 Test Task"
+description: Add or improve test coverage.
+title: "🧪 [Test] "
+labels:
+  - kind:test
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Test Scope
+      description: What behavior or risk should be covered?
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Approach
+      description: Unit/integration/e2e strategy and tooling.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Tests implemented\n- [ ] Failing scenario reproduced then fixed\n- [ ] CI gate wired or updated\n- [ ] Coverage impact captured"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:7-hardening"
+    validations:
+      required: true
+

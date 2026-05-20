@@ -1,0 +1,35 @@
+name: "🔧 Chore"
+description: Non-feature maintenance and housekeeping work.
+title: "🔧 [Chore] "
+labels:
+  - kind:chore
+body:
+  - type: textarea
+    id: work
+    attributes:
+      label: Chore Scope
+      description: Describe maintenance work and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Expected Impact
+      description: Reliability, DX, performance, or risk reduction impact.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Task completed\n- [ ] Automation added if repetitive\n- [ ] CI/CD unaffected or improved\n- [ ] Documentation updated if needed"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:0b-foundations"
+    validations:
+      required: true
+
