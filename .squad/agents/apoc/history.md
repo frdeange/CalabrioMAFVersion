@@ -39,3 +39,13 @@
 ### 2026-05-19: Coordinator clarification (post-rename)
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
+
+## Team Update — 2026-05-20T18:21:00Z
+
+**Orchestration Complete:** Sprint 1 kickoff successful.
+
+- Mouse: MAF workflow design + MCP tools → PR #16 ✓
+- Tank: Database DDL + views + seed data → PR #15 ✓  
+- Apoc: Query validation + KPI targets → PR #17 ✓
+
+Status: All agents delivered on scope.
