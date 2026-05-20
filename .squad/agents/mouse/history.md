@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-20: Dynamic metadata-first Sprint 1 workflow
+- The WFM Supervisor prompt stays fixed and domain-neutral; new data domains must be onboarded through `_metadata.catalog_tables`, `_metadata.catalog_columns`, and `_metadata.catalog_joins`, not by editing prompt text.
+- The Router should cache `listTables()` once per session and pass only shortlisted tables to the SQL Builder to keep normal turns under the 10k input-token target.
+- `executeQuery()` is the final enforcement point: MI-only SQL auth, `sqlglot` SELECT-only validation, active-table whitelist, 30s timeout, and a 1000-row cap all belong in the MCP layer.
+
 ### 2026-05-19: Initial context
 - **Decisión clave:** Local MCP (no Hosted) — MAF orquesta el bucle de tool calls. Esto habilita `FunctionMiddleware` y propagación controlada de `x-user-context` (§2.4).
 - **3 FoundryAgent clients:** Intent (sin tools), SqlBuilder (Schema MCP), Executor (SqlExec MCP). Principio de mínimo privilegio (§2.1).
@@ -39,3 +44,13 @@
 ### 2026-05-19: Coordinator clarification (post-rename)
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
+
+## Team Update — 2026-05-20T18:21:00Z
+
+**Orchestration Complete:** Sprint 1 kickoff successful.
+
+- Mouse: MAF workflow design + MCP tools → PR #16 ✓
+- Tank: Database DDL + views + seed data → PR #15 ✓  
+- Apoc: Query validation + KPI targets → PR #17 ✓
+
+Status: All agents delivered on scope.

@@ -3,7 +3,6 @@ import sys
 from typing import Any
 
 from fastmcp import FastMCP
-from pydantic import BaseModel
 from pythonjsonlogger.json import JsonFormatter
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -11,21 +10,7 @@ from starlette.routing import Mount, Route
 
 from app.config import settings
 from app.otel_setup import initialize_otel
-
-
-class ViewSchemaRequest(BaseModel):
-    view: str
-
-
-class ViewInfo(BaseModel):
-    name: str
-    description: str
-
-
-class SchemaResponse(BaseModel):
-    view: str
-    columns: list[dict[str, Any]]
-    status: str
+from app.tools import execute_query_tool, get_schema_tool, list_tables_tool
 
 
 def _configure_logging() -> logging.Logger:
@@ -47,33 +32,19 @@ logger = _configure_logging()
 mcp = FastMCP("mcp-wfm")
 
 
-@mcp.tool(description="List WFM views available to the caller")
-def list_views() -> list[dict[str, str]]:
-    return [ViewInfo(name="vw_agent_status", description="stub").model_dump()]
+@mcp.tool(description="List active table catalog entries available for discovery")
+def listTables() -> list[dict[str, Any]]:
+    return list_tables_tool()
 
 
-@mcp.tool(description="Get schema metadata for one WFM view")
-def get_schema(view: str) -> dict[str, Any]:
-    request = ViewSchemaRequest(view=view)
-    return SchemaResponse(view=request.view, columns=[], status="stub").model_dump()
+@mcp.tool(description="Get schema metadata and join hints for one active table")
+def getSchema(table_name: str) -> dict[str, Any]:
+    return get_schema_tool(table_name)
 
 
-@mcp.tool(description="Get suggested joins for one WFM view")
-def get_joins(view: str) -> list[dict[str, Any]]:
-    _ = ViewSchemaRequest(view=view)
-    return []
-
-
-@mcp.tool(description="Get query rules for one WFM view")
-def get_rules(view: str) -> list[dict[str, Any]]:
-    _ = ViewSchemaRequest(view=view)
-    return []
-
-
-@mcp.tool(description="Get sample queries for one WFM view")
-def sample_queries(view: str) -> list[dict[str, Any]]:
-    _ = ViewSchemaRequest(view=view)
-    return []
+@mcp.tool(description="Validate and execute one SELECT query against active tables")
+def executeQuery(sql: str) -> dict[str, Any]:
+    return execute_query_tool(sql)
 
 
 async def health(_: Any) -> JSONResponse:

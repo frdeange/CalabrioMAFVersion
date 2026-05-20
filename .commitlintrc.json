@@ -8,13 +8,6 @@
       2,
       "never"
     ],
-    "subject-case": [
-      0
-    ],
-    "body-leading-blank": [
-      2,
-      "always"
-    ],
     "type-enum": [
       2,
       "always",
