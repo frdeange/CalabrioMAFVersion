@@ -1,0 +1,67 @@
+services:
+  agent-host:
+    build:
+      context: .\src\agent_host
+    container_name: agent-host
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - calabrio-poc-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  mcp-wfm:
+    build:
+      context: .\src\mcp_wfm
+    container_name: mcp-wfm
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+    networks:
+      - calabrio-poc-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  mcp-forecast:
+    build:
+      context: .\src\mcp_forecast
+    container_name: mcp-forecast
+    env_file:
+      - .env
+    ports:
+      - "8002:8002"
+    networks:
+      - calabrio-poc-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # sql-local:
+  #   image: mcr.microsoft.com/azure-sql-edge:latest
+  #   container_name: sql-local
+  #   environment:
+  #     ACCEPT_EULA: "Y"
+  #     MSSQL_SA_PASSWORD: "Your_strong_password123!"
+  #   ports:
+  #     - "1433:1433"
+  #   networks:
+  #     - calabrio-poc-net
+  # Optional for Sprint 0; Kiko uses Azure SQL remote. Uncomment if you want to test against a local SQL container.
+
+networks:
+  calabrio-poc-net:
+    driver: bridge

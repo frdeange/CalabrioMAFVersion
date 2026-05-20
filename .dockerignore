@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.pyc
+tests/
+.env*
+!.env.example
+node_modules
+.vscode
+.idea
+*.md
+.squad/
