@@ -40,6 +40,10 @@
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
 
+### 2026-05-20: Query validation pack learnings
+- Production evidence gathered so far is strongly **absence-first**: the most realistic anchor prompts are absence ranking, absence summary, and start/end/status follow-ups.
+- For dynamic schema discovery, **BU/team scoping is a hard pass/fail rule**, not a nice-to-have optimization. A correct-looking answer without supervisor scope is still a failed test.
+- The most meaningful PoC KPI is **input-token compression under controlled schema calls** (warm `listTables`, then 1-3 `getSchema` calls), because output size stays roughly comparable to the Calabrio baseline.
 ## Team Update — 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.
