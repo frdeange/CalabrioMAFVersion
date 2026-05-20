@@ -1,0 +1,35 @@
+name: "🚀 Release"
+description: Prepare and track release activities.
+title: "🚀 [Release] "
+labels:
+  - kind:release
+body:
+  - type: textarea
+    id: release_scope
+    attributes:
+      label: Release Scope
+      description: What components/changes are included?
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risks and Rollback Plan
+      description: Key risks, mitigations, and rollback strategy.
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: "- [ ] Release checklist complete\n- [ ] Required approvals completed\n- [ ] Monitoring/alerts confirmed\n- [ ] Post-release notes published"
+    validations:
+      required: true
+  - type: input
+    id: linked_spike_phase
+    attributes:
+      label: Linked Spike / Phase
+      placeholder: "#123, phase:8-tuning"
+    validations:
+      required: true
+
