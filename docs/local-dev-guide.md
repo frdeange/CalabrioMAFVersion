@@ -38,7 +38,16 @@ What this does:
 This reads `.devtunnel-id` and runs `devtunnel host {tunnel-id}`.
 
 ## APIM configuration
-- Set APIM Named Value `backend-url` to the URL printed by setup.
+- Set APIM Named Value `backend-url` to the DevTunnel **port URL** (for example `https://88g8bcv8-8000.uks1.devtunnels.ms`), not the friendly tunnel URL.
+- Set the API **Web service URL** in APIM Settings to that same DevTunnel **port URL**.
+- Find the correct value with:
+
+```powershell
+devtunnel show {tunnel-id}
+```
+
+- In the output, copy the URL shown under the **Ports** section for your backend port.
+- APIM policies derive the `Host` header dynamically from the API Web service URL, so no manual Host-header configuration is needed.
 - Keep `DEVTUNNEL_URL` in `.env` aligned with the same value when needed locally.
 
 ## Troubleshooting
