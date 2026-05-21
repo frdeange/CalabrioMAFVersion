@@ -45,6 +45,11 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - Seed strategy is deterministic and idempotent: one demo BU, 50 agents, realistic distributions for absence/overtime/shift activity, and metadata catalog entries describing tables, columns, and joins.
 - UAI access is now read-only by policy (`db_datareader` + SELECT on `analytics` and `_metadata`, explicitly removing `db_datawriter` membership).
 
+### 2026-05-21: Sprint 2 APIM policy baseline
+- `/chat` is now policy-driven at APIM with Entra multi-tenant JWT validation (`/common/v2.0` metadata), user-claim header injection, per-user throttling (60 req/min), and backend routing via Named Value `{{backend-url}}`.
+- `/health` and `/ready` stay unauthenticated at APIM but still route through the same `backend-url` switch, enabling seamless DevTunnel/ACA environment flips without XML edits.
+- HMAC signing remains intentionally deferred as a TODO until Key Vault-backed secret wiring is available.
+
 ## Team Update — 2026-05-21T000500Z
 
 **Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.

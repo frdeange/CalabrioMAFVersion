@@ -1,0 +1,25 @@
+<policies>
+  <inbound>
+    <base />
+    <set-backend-service base-url="{{backend-url}}" />
+  </inbound>
+  <backend>
+    <forward-request timeout="10" />
+  </backend>
+  <outbound>
+    <base />
+    <choose>
+      <when condition="@(context.Request.Headers.ContainsKey(&quot;Origin&quot;))">
+        <set-header name="Access-Control-Allow-Origin" exists-action="override">
+          <value>@(context.Request.Headers.GetValueOrDefault("Origin",""))</value>
+        </set-header>
+        <set-header name="Access-Control-Allow-Credentials" exists-action="override">
+          <value>true</value>
+        </set-header>
+      </when>
+    </choose>
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>
