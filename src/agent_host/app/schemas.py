@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class WorkflowModel(BaseModel):
@@ -23,6 +24,32 @@ class IntentType(str, Enum):
 class WorkflowStatus(str, Enum):
     COMPLETED = "completed"
     ERROR = "error"
+
+
+class WorkflowEventType(str, Enum):
+    INTENT_RESOLVED = "intent_resolved"
+    SQL_BUILDING = "sql_building"
+    SQL_READY = "sql_ready"
+    EXECUTING = "executing"
+    RESULT = "result"
+    DONE = "done"
+    ERROR = "error"
+
+
+class WorkflowEvent(WorkflowModel):
+    event: WorkflowEventType
+    executor: str
+    data: dict[str, Any] = Field(default_factory=dict)
+    timestamp: str
+
+    @field_validator("timestamp")
+    @classmethod
+    def _validate_timestamp(cls, value: str) -> str:
+        try:
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("timestamp must be a valid ISO-8601 datetime string") from exc
+        return value
 
 
 class IntentResult(WorkflowModel):
