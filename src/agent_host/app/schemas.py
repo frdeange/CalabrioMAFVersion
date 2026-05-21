@@ -53,6 +53,13 @@ class QueryResult(WorkflowModel):
     query_summary: str = Field(default="")
 
 
+class WorkflowEvent(WorkflowModel):
+    event: str
+    executor: str
+    data: dict[str, Any] = Field(default_factory=dict)
+    timestamp: str
+
+
 class WorkflowResponse(WorkflowModel):
     status: WorkflowStatus
     message: str

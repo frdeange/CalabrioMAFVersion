@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 import app.main as main
+from app.schemas import IntentResult, IntentType, QueryResult, SqlPlan, WorkflowResponse, WorkflowStatus
 
 
 def test_ready_reports_foundry_dependencies_false_when_unconfigured(
@@ -129,4 +130,73 @@ def test_chat_returns_error_response_when_workflow_raises(monkeypatch) -> None:
         "headcount",
         main.settings.default_bu_id,
         {"correlation_id": "corr-2", "conversation_id": "conv-456"},
+    )
+
+
+def test_chat_serializes_workflow_model_and_passes_apim_identity(monkeypatch) -> None:
+    workflow = MagicMock()
+    workflow.run.return_value = WorkflowResponse(
+        status=WorkflowStatus.COMPLETED,
+        message="Found 5 agents",
+        intent=IntentResult(
+            intent=IntentType.DATA_QUERY,
+            candidate_tables=["analytics.vw_PersonDetail"],
+            language_hint="en",
+            cache_action="reuse",
+        ),
+        sql_plan=SqlPlan(
+            sql="SELECT COUNT(*) AS total_agents FROM analytics.vw_PersonDetail WHERE bu_id = 'BU-001'",
+            tables_used=["analytics.vw_PersonDetail"],
+            assumptions=[],
+            explanation="Count active agents",
+            error=None,
+        ),
+        query_result=QueryResult(
+            answer="There are 5 agents.",
+            row_count=1,
+            execution_ms=42,
+            query_summary="1 tables, 1 rows",
+        ),
+        error=None,
+    )
+
+    monkeypatch.setattr(main, "_get_workflow", lambda: workflow)
+    monkeypatch.setattr(main.settings, "default_bu_id", "BU-001")
+    monkeypatch.setattr(
+        main.foundry_manager,
+        "create_conversation",
+        MagicMock(return_value="conv-model"),
+    )
+
+    client = TestClient(main.app)
+    response = client.post(
+        "/chat",
+        headers={
+            "x-user-oid": "user-123",
+            "x-user-name": "Mouse Tester",
+            "x-user-teams": "[\"ops\", \"wfm\"]",
+        },
+        json={"message": "headcount", "correlation_id": "corr-3"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == WorkflowStatus.COMPLETED.value
+    assert payload["message"] == "Found 5 agents"
+    assert payload["intent"] == IntentType.DATA_QUERY.value
+    assert payload["sql"].startswith("SELECT COUNT(*)")
+    assert payload["answer"] == "There are 5 agents."
+    assert payload["conversation_id"] == "conv-model"
+    workflow.run.assert_called_once_with(
+        "headcount",
+        "BU-001",
+        {
+            "correlation_id": "corr-3",
+            "conversation_id": "conv-model",
+            "user": {
+                "oid": "user-123",
+                "name": "Mouse Tester",
+                "teams": ["ops", "wfm"],
+            },
+        },
     )

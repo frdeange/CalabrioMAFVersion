@@ -12,22 +12,27 @@ import sqlglot
 from sqlglot import errors as sqlglot_errors
 from sqlglot import exp
 
+from app.config import settings
 from app.schemas import (
     ExecutionResult,
     IntentResult,
     IntentType,
     QueryResult,
     SqlPlan,
+    WorkflowEvent,
     WorkflowResponse,
     WorkflowStatus,
 )
 
 try:
     from azure.ai.projects import AIProjectClient
+    from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
     from azure.identity import DefaultAzureCredential
 except ImportError:  # pragma: no cover - optional until dependencies land in agent_host
     AIProjectClient = None
     DefaultAzureCredential = None
+    HttpResponseError = Exception
+    ResourceNotFoundError = Exception
 
 try:  # pragma: no cover - import pattern placeholder for native MAF wiring
     from agent_framework import MCPStreamableHTTPTool, WorkflowBuilder
@@ -45,17 +50,24 @@ class WorkflowExecutionError(RuntimeError):
 
 
 class WFMWorkflow:
-    def __init__(self, project_endpoint: str, model_deployment: str, mcp_wfm_url: str):
+    def __init__(
+        self,
+        project_endpoint: str,
+        model_deployment: str,
+        mcp_wfm_url: str,
+        agent_names: dict[str, str] | None = None,
+    ):
         self.project_endpoint = project_endpoint.strip()
         self.model_deployment = model_deployment.strip()
         self.mcp_wfm_url = mcp_wfm_url.rstrip("/")
         self._project = self._build_project_client()
         self._openai = self._project.get_openai_client()
-        self._agent_names = {
+        self._agent_names = agent_names or {
             "intent": "wfm-intent-classifier",
             "sql": "wfm-sql-builder",
             "executor": "wfm-query-executor",
         }
+        self._known_agents: set[str] = set()
         self._workflow_builder = WorkflowBuilder  # TODO[S6]: replace with native WorkflowBuilder assembly.
         self._schema_mcp_tool = MCPStreamableHTTPTool  # TODO[S1]: bind local MCPStreamableHTTPTool instances.
         # TODO[S2]: apply AgentMiddleware / FunctionMiddleware stack here.
@@ -69,22 +81,30 @@ class WFMWorkflow:
         bu_id: str,
         session_context: dict[str, Any] | None,
     ) -> WorkflowResponse:
-        if not message or not message.strip():
-            raise ValueError("message is required")
-        if not bu_id or not bu_id.strip():
-            raise ValueError("bu_id is required")
-
+        self._validate_run_inputs(message, bu_id)
         session = session_context if session_context is not None else {}
-        try:
-            intent = self._run_intent(message=message, session_context=session)
-            if intent.intent is IntentType.CONVERSATIONAL:
-                reply = self._compose_non_data_reply(intent)
-                return WorkflowResponse(status=WorkflowStatus.COMPLETED, message=reply, intent=intent)
-            if intent.intent is IntentType.OUT_OF_SCOPE:
-                reply = self._compose_non_data_reply(intent)
-                return WorkflowResponse(status=WorkflowStatus.COMPLETED, message=reply, intent=intent)
+        conversation_id = self._resolve_conversation_id(session)
 
-            sql_plan = self._run_sql_builder(message=message, bu_id=bu_id, intent_result=intent)
+        try:
+            intent = self._run_intent(
+                message=message,
+                session_context=session,
+                conversation_id=conversation_id,
+            )
+            if intent.intent in {IntentType.CONVERSATIONAL, IntentType.OUT_OF_SCOPE}:
+                reply = self._compose_non_data_reply(intent)
+                return WorkflowResponse(
+                    status=WorkflowStatus.COMPLETED,
+                    message=reply,
+                    intent=intent,
+                )
+
+            sql_plan = self._run_sql_builder(
+                message=message,
+                bu_id=bu_id,
+                intent_result=intent,
+                conversation_id=conversation_id,
+            )
             if sql_plan.error or not sql_plan.sql.strip():
                 error_message = sql_plan.error or "Unable to produce safe SQL from available metadata."
                 return WorkflowResponse(
@@ -100,6 +120,7 @@ class WFMWorkflow:
                 language_hint=intent.language_hint,
                 sql_plan=sql_plan,
                 execution_result=execution_result,
+                conversation_id=conversation_id,
             )
             return WorkflowResponse(
                 status=WorkflowStatus.COMPLETED,
@@ -109,18 +130,138 @@ class WFMWorkflow:
                 query_result=query_result,
             )
         except WorkflowExecutionError as exc:
-            fallback_intent = IntentResult(
-                intent=IntentType.DATA_QUERY,
-                candidate_tables=[],
-                language_hint=session.get("language_hint", "en"),
-                cache_action="bypass",
+            return self._error_response(session, str(exc))
+
+    def run_streaming(
+        self,
+        message: str,
+        bu_id: str,
+        session_context: dict[str, Any] | None,
+    ):
+        self._validate_run_inputs(message, bu_id)
+        session = session_context if session_context is not None else {}
+        conversation_id = self._resolve_conversation_id(session)
+
+        try:
+            intent = self._run_intent(
+                message=message,
+                session_context=session,
+                conversation_id=conversation_id,
             )
-            return WorkflowResponse(
-                status=WorkflowStatus.ERROR,
-                message="I couldn't retrieve data right now.",
-                intent=session.get("last_intent") or fallback_intent,
-                error=str(exc),
+            yield self._build_event(
+                event="intent_resolved",
+                executor="intent",
+                data={
+                    "conversation_id": conversation_id,
+                    "intent": intent.intent.value,
+                    "candidate_tables": intent.candidate_tables,
+                    "language_hint": intent.language_hint,
+                },
             )
+
+            if intent.intent in {IntentType.CONVERSATIONAL, IntentType.OUT_OF_SCOPE}:
+                reply = self._compose_non_data_reply(intent)
+                yield self._build_event(
+                    event="result",
+                    executor="workflow",
+                    data={
+                        "conversation_id": conversation_id,
+                        "message": reply,
+                    },
+                )
+                yield self._build_event(
+                    event="done",
+                    executor="workflow",
+                    data={
+                        "conversation_id": conversation_id,
+                        "status": WorkflowStatus.COMPLETED.value,
+                    },
+                )
+                return
+
+            yield self._build_event(
+                event="sql_building",
+                executor="sql-builder",
+                data={
+                    "conversation_id": conversation_id,
+                    "candidate_tables": intent.candidate_tables,
+                },
+            )
+            sql_plan = self._run_sql_builder(
+                message=message,
+                bu_id=bu_id,
+                intent_result=intent,
+                conversation_id=conversation_id,
+            )
+            if sql_plan.error or not sql_plan.sql.strip():
+                error_message = sql_plan.error or "Unable to produce safe SQL from available metadata."
+                yield self._build_error_event(
+                    executor="sql-builder",
+                    reason=error_message,
+                    conversation_id=conversation_id,
+                    suggestion="Confirm schema metadata is available for the requested tables.",
+                )
+                return
+
+            yield self._build_event(
+                event="sql_ready",
+                executor="sql-builder",
+                data={
+                    "conversation_id": conversation_id,
+                    "sql": sql_plan.sql,
+                    "tables_used": sql_plan.tables_used,
+                    "assumptions": sql_plan.assumptions,
+                },
+            )
+            yield self._build_event(
+                event="executing",
+                executor="query-executor",
+                data={
+                    "conversation_id": conversation_id,
+                    "sql": sql_plan.sql,
+                },
+            )
+
+            execution_result = self._execute_query(sql_plan.sql)
+            query_result = self._run_executor(
+                language_hint=intent.language_hint,
+                sql_plan=sql_plan,
+                execution_result=execution_result,
+                conversation_id=conversation_id,
+            )
+            yield self._build_event(
+                event="result",
+                executor="query-executor",
+                data={
+                    "conversation_id": conversation_id,
+                    "message": query_result.answer,
+                    "row_count": query_result.row_count,
+                    "execution_ms": query_result.execution_ms,
+                    "query_summary": query_result.query_summary,
+                    "sql": sql_plan.sql,
+                },
+            )
+            yield self._build_event(
+                event="done",
+                executor="workflow",
+                data={
+                    "conversation_id": conversation_id,
+                    "status": WorkflowStatus.COMPLETED.value,
+                },
+            )
+        except WorkflowExecutionError as exc:
+            yield self._build_error_event(
+                executor="workflow",
+                reason=str(exc),
+                conversation_id=conversation_id,
+                suggestion="Verify Foundry agent provisioning and MCP availability, then retry.",
+            )
+
+    def _validate_run_inputs(self, message: str, bu_id: str) -> None:
+        if not message or not message.strip():
+            raise ValueError("message is required")
+        if not bu_id or not bu_id.strip():
+            raise ValueError("bu_id is required")
 
     def _build_project_client(self) -> Any:
         if AIProjectClient is None or DefaultAzureCredential is None:
@@ -134,7 +275,23 @@ class WFMWorkflow:
             credential=DefaultAzureCredential(),
         )
 
-    def _run_intent(self, message: str, session_context: dict[str, Any]) -> IntentResult:
+    def _resolve_conversation_id(self, session_context: dict[str, Any]) -> str:
+        conversation_id = str(session_context.get("conversation_id") or "").strip()
+        if conversation_id:
+            return conversation_id
+        conversation = self._openai.conversations.create()
+        conversation_id = getattr(conversation, "id", "")
+        if not conversation_id:
+            raise WorkflowExecutionError("Foundry conversation id missing.")
+        session_context["conversation_id"] = conversation_id
+        return conversation_id
+
+    def _run_intent(
+        self,
+        message: str,
+        session_context: dict[str, Any],
+        conversation_id: str,
+    ) -> IntentResult:
         cached_catalog = session_context.get(CATALOG_CACHE_KEY, [])
         intent_request = {
             "user_message": message,
@@ -146,6 +303,7 @@ class WFMWorkflow:
             agent_name=self._agent_names["intent"],
             message=json.dumps(self._to_jsonable(intent_request), ensure_ascii=False),
             model_type=IntentResult,
+            conversation_id=conversation_id,
         )
         session_context["language_hint"] = intent.language_hint
 
@@ -167,13 +325,20 @@ class WFMWorkflow:
                 agent_name=self._agent_names["intent"],
                 message=json.dumps(self._to_jsonable(intent_request), ensure_ascii=False),
                 model_type=IntentResult,
+                conversation_id=conversation_id,
             )
             session_context["language_hint"] = intent.language_hint
 
         session_context["last_intent"] = intent
         return intent
 
-    def _run_sql_builder(self, message: str, bu_id: str, intent_result: IntentResult) -> SqlPlan:
+    def _run_sql_builder(
+        self,
+        message: str,
+        bu_id: str,
+        intent_result: IntentResult,
+        conversation_id: str,
+    ) -> SqlPlan:
         candidate_tables = intent_result.candidate_tables
         if not candidate_tables:
             return SqlPlan(
@@ -210,6 +375,7 @@ class WFMWorkflow:
             agent_name=self._agent_names["sql"],
             message="Build a safe SQL Server SELECT plan from the supplied structured inputs.",
             model_type=SqlPlan,
+            conversation_id=conversation_id,
             structured_inputs={
                 "intentResult": intent_result.model_dump(mode="json"),
                 "tableSchemas": usable_schemas,
@@ -225,10 +391,12 @@ class WFMWorkflow:
         language_hint: str,
         sql_plan: SqlPlan,
         execution_result: ExecutionResult,
+        conversation_id: str,
     ) -> QueryResult:
         answer = self._invoke_agent_text(
             agent_name=self._agent_names["executor"],
             message="Produce the final user-facing answer from the supplied structured inputs.",
+            conversation_id=conversation_id,
             structured_inputs={
                 "sqlPlan": sql_plan.model_dump(mode="json"),
                 "executionResult": execution_result.model_dump(mode="json"),
@@ -314,10 +482,12 @@ class WFMWorkflow:
         agent_name: str,
         message: str,
         model_type: type[BaseModelT],
+        conversation_id: str,
         structured_inputs: dict[str, Any] | None = None,
     ) -> BaseModelT:
-        response = self._create_agent_response(
+        response = self._call_foundry_agent(
             agent_name=agent_name,
+            conversation_id=conversation_id,
             message=message,
             structured_inputs=structured_inputs,
             response_format=model_type,
@@ -347,36 +517,41 @@ class WFMWorkflow:
         self,
         agent_name: str,
         message: str,
+        conversation_id: str,
         structured_inputs: dict[str, Any] | None = None,
     ) -> str:
-        response = self._create_agent_response(
+        response = self._call_foundry_agent(
             agent_name=agent_name,
+            conversation_id=conversation_id,
             message=message,
             structured_inputs=structured_inputs,
         )
         return self._extract_response_text(response)
 
-    def _create_agent_response(
+    def _call_foundry_agent(
         self,
         agent_name: str,
+        conversation_id: str,
         message: str,
         structured_inputs: dict[str, Any] | None = None,
         response_format: type[BaseModelT] | None = None,
     ) -> Any:
+        self._ensure_agent_exists(agent_name)
         extra_body: dict[str, Any] = {
             "agent_reference": {"name": agent_name, "type": "agent_reference"},
         }
         if structured_inputs is not None:
             extra_body["structured_inputs"] = structured_inputs
 
+        request_kwargs: dict[str, Any] = {
+            "conversation": conversation_id,
+            "extra_body": extra_body,
+            "input": message,
+        }
+        if response_format is not None:
+            request_kwargs["options"] = {"response_format": response_format}
+
         try:
-            request_kwargs: dict[str, Any] = {
-                "conversation": self._openai.conversations.create().id,
-                "extra_body": extra_body,
-                "input": message,
-            }
-            if response_format is not None:
-                request_kwargs["options"] = {"response_format": response_format}
             return self._openai.responses.create(**request_kwargs)
         except TypeError as exc:
             if response_format is None:
@@ -385,9 +560,44 @@ class WFMWorkflow:
             try:
                 return self._openai.responses.create(**request_kwargs)
             except Exception as inner_exc:
-                raise WorkflowExecutionError("Foundry agent call failed for {0}.".format(agent_name)) from inner_exc
+                raise self._wrap_foundry_exception(agent_name, inner_exc) from inner_exc
         except Exception as exc:
-            raise WorkflowExecutionError("Foundry agent call failed for {0}.".format(agent_name)) from exc
+            raise self._wrap_foundry_exception(agent_name, exc) from exc
+
+    def _ensure_agent_exists(self, agent_name: str) -> None:
+        if agent_name in self._known_agents:
+            return
+        try:
+            self._project.agents.get(agent_name)
+            self._known_agents.add(agent_name)
+        except ResourceNotFoundError as exc:
+            raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
+        except HttpResponseError as exc:
+            if getattr(exc, "status_code", None) == 404:
+                raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
+            raise WorkflowExecutionError(
+                "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
+            ) from exc
+        except Exception as exc:
+            if "not found" in str(exc).lower():
+                raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
+            raise WorkflowExecutionError(
+                "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
+            ) from exc
+
+    def _wrap_foundry_exception(self, agent_name: str, exc: Exception) -> WorkflowExecutionError:
+        if isinstance(exc, ResourceNotFoundError):
+            return WorkflowExecutionError(self._missing_agent_message(agent_name))
+        if isinstance(exc, HttpResponseError) and getattr(exc, "status_code", None) == 404:
+            return WorkflowExecutionError(self._missing_agent_message(agent_name))
+        if "not found" in str(exc).lower() and "agent" in str(exc).lower():
+            return WorkflowExecutionError(self._missing_agent_message(agent_name))
+        return WorkflowExecutionError("Foundry agent call failed for {0}: {1}".format(agent_name, exc))
+
+    def _missing_agent_message(self, agent_name: str) -> str:
+        return "Foundry agent '{0}' not found, please create it in Azure AI Foundry Studio".format(
+            agent_name
+        )
 
     def _extract_response_text(self, response: Any) -> str:
         output_text = getattr(response, "output_text", None)
@@ -500,10 +710,66 @@ class WFMWorkflow:
             return (
                 "No live data query is needed for this turn."
                 if not language.startswith("es")
-                else "Esta petición no necesita una consulta de datos en vivo."
+                else "Esta peticion no necesita una consulta de datos en vivo."
             )
         return (
             "This workflow can only help with safe WFM data requests."
             if not language.startswith("es")
             else "Este flujo solo puede ayudar con solicitudes seguras de datos WFM."
+        )
+
+    def _error_response(self, session: dict[str, Any], error_message: str) -> WorkflowResponse:
+        return WorkflowResponse(
+            status=WorkflowStatus.ERROR,
+            message="I couldn't retrieve data right now.",
+            intent=session.get("last_intent") or self._fallback_intent(session),
+            error=error_message,
+        )
+
+    def _fallback_intent(self, session: dict[str, Any]) -> IntentResult:
+        return IntentResult(
+            intent=IntentType.DATA_QUERY,
+            candidate_tables=[],
+            language_hint=str(session.get("language_hint") or "en"),
+            cache_action="bypass",
+        )
+
+    def _build_event(self, event: str, executor: str, data: dict[str, Any]) -> WorkflowEvent:
+        return WorkflowEvent(
+            event=event,
+            executor=executor,
+            data=self._to_jsonable(data),
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+    def _build_error_event(
+        self,
+        executor: str,
+        reason: str,
+        conversation_id: str,
+        suggestion: str,
+    ) -> WorkflowEvent:
+        return self._build_event(
+            event="error",
+            executor=executor,
+            data={
+                "conversation_id": conversation_id,
+                "layer": executor,
+                "reason": reason,
+                "suggestion": suggestion,
+            },
+        )
+
+
+class AgentHostWorkflow(WFMWorkflow):
+    def __init__(self) -> None:
+        super().__init__(
+            project_endpoint=settings.foundry_project_endpoint,
+            model_deployment=settings.model_deployment,
+            mcp_wfm_url=settings.mcp_wfm_url,
+            agent_names={
+                "intent": settings.intent_agent_name,
+                "sql": settings.sql_builder_agent_name,
+                "executor": settings.query_executor_agent_name,
+            },
         )
