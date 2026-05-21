@@ -1,30 +1,8 @@
 <policies>
   <!-- Host is derived from API Web service URL; set backend-url/Web service URL to the same DevTunnel port URL. -->
+  <!-- CORS handled at API level via APIM built-in CORS policy. Do not add CORS handling here. -->
   <inbound>
     <base />
-
-    <choose>
-      <when condition="@(context.Request.Method == &quot;OPTIONS&quot;)">
-        <return-response>
-          <set-status code="200" reason="OK" />
-          <set-header name="Access-Control-Allow-Origin" exists-action="override">
-            <value>@(context.Request.Headers.GetValueOrDefault("Origin",""))</value>
-          </set-header>
-          <set-header name="Access-Control-Allow-Methods" exists-action="override">
-            <value>POST, OPTIONS</value>
-          </set-header>
-          <set-header name="Access-Control-Allow-Headers" exists-action="override">
-            <value>Authorization, Content-Type, Accept</value>
-          </set-header>
-          <set-header name="Access-Control-Allow-Credentials" exists-action="override">
-            <value>true</value>
-          </set-header>
-          <set-header name="Access-Control-Max-Age" exists-action="override">
-            <value>3600</value>
-          </set-header>
-        </return-response>
-      </when>
-    </choose>
 
     <!-- Validate Entra ID v2.0 access token (multi-tenant via common metadata). -->
     <validate-jwt
@@ -77,21 +55,6 @@
     <set-header name="x-user-tid" exists-action="delete" />
     <set-header name="x-user-name" exists-action="delete" />
     <set-header name="x-user-email" exists-action="delete" />
-
-    <!-- Reflect CORS origin when present. -->
-    <choose>
-      <when condition="@(context.Request.Headers.ContainsKey(&quot;Origin&quot;))">
-        <set-header name="Access-Control-Allow-Origin" exists-action="override">
-          <value>@(context.Request.Headers.GetValueOrDefault("Origin",""))</value>
-        </set-header>
-        <set-header name="Access-Control-Allow-Credentials" exists-action="override">
-          <value>true</value>
-        </set-header>
-        <set-header name="Access-Control-Expose-Headers" exists-action="override">
-          <value>Content-Type,Request-Id,traceparent</value>
-        </set-header>
-      </when>
-    </choose>
   </outbound>
 
   <on-error>
