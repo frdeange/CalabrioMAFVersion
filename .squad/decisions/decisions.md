@@ -137,4 +137,33 @@ This preserves q14 and the minimum-privilege decision from architecture Â§2.1:
 
 ---
 
+## mouse-structured-io
+
+### 2026-05-21 — Structured agent I/O for Sprint 1 workflow
+
+**By:** Mouse  
+**Requested by:** Kiko de Ángel  
+**Timestamp:** 2026-05-21T09:30:00Z
+
+#### What
+
+Updated the Sprint 1 Foundry workflow to use SDK-native contracts across agent hops:
+
+1. Intent Classifier keeps free-text input, now explicitly supports user messages in any language and propagates `language_hint`.
+2. SQL Builder agent definition now declares structured inputs for `intentResult`, `tableSchemas`, `buId`, and `userQuestion`, and the runtime passes those values through `structured_inputs`.
+3. Query Executor agent definition now declares structured inputs for `sqlPlan`, `executionResult`, and `userLanguage`, and the runtime uses those values instead of JSON-in-message handoff.
+4. Intent and SQL Builder calls now request strict Pydantic structured outputs through `response_format` and consume typed `.value` results.
+
+#### Why
+
+Prompt-only "return JSON" instructions are brittle and duplicate schema rules that already exist in Pydantic. Foundry structured inputs and MAF structured outputs make the workflow contract explicit, reduce parsing fragility, and preserve multilingual behavior end to end.
+
+#### Consequences
+
+- Agent prompts can focus on policy and reasoning instead of JSON formatting instructions.
+- SQL Builder and Query Executor definitions are now aligned with Foundry handlebar templating support.
+- Workflow orchestration keeps typed contracts at the host boundary while remaining compatible with existing MCP tool execution and safe-failure handling.
+
+---
+
 

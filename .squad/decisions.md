@@ -221,3 +221,192 @@ Azure SQL (remote Azure endpoint)
 - Document architectural decisions here (append-only — never edit past entries to change meaning)
 - Agents propose decisions via `.squad/decisions/inbox/{agent}-{slug}.md`; Scribe merges into this file after each work batch
 - Keep history focused on work; decisions focused on direction
+
+---
+
+## 2026-05-19 — DevOps Bootstrap Detail
+
+**By:** Switch (for Kiko de Ángel)  
+**Date:** 2026-05-19T12:55:46Z  
+**Branch:** `squad/0-devops-foundations`
+
+### What was created
+
+- GitHub issue templates in `.github/ISSUE_TEMPLATE/` for bug, feature, security, test, docs, infra, spike, chore, and release; plus `config.yml` with blank issues disabled.
+- PR checklist template at `.github/pull_request_template.md`, including reviewer lockout reminder from decision #5.
+- CODEOWNERS at `.github/CODEOWNERS`, materialized from `.squad/routing.md` with repo-owner fallback and squad reviewer comments.
+- Label automation script at `.github/scripts/sync-labels.ps1` and labels synchronized via `gh label create --force`.
+- Branch protection payloads in `.github/branch-protection.main.json` and `.github/branch-protection.develop.json`, applied through `gh api` to `main` and `develop`.
+- CI/CD scaffolding with pr-validation, secret-scan, and commitlint workflows.
+- Dependabot baseline and triage helper script.
+
+### Status
+
+PR #1 on `squad/0-devops-foundations` carrying full DevOps bootstrap with reviewed + approved changes.
+
+---
+
+## 2026-05-19 — Branch Rename: `master` → `main`
+
+**By:** Switch (for Kiko de Ángel)
+
+### What changed
+
+- Default branch renamed atomically from `master` to `main` via GitHub API.
+- Open PRs auto-retargeted by GitHub (notably PR #10 to `main`).
+- PR #1 updated to remove hardcoded `master` references in governance artifacts.
+
+### Why
+
+Modernization and alignment with GitHub's post-2020 default branch convention.
+
+### Impact
+
+- All branch protection and workflow filters now reference `main`.
+- All new branches should be created from `main` (or `develop` per GitFlow).
+
+---
+
+## 2026-05-19 — PR #1 Copilot Review Round 2 Resolution
+
+**By:** Switch (for Kiko de Ángel)
+
+**What:** Addressed 17 net-new Copilot review comments on PR #1. Unified actions/checkout SHA to v6.0.2 across all workflows, added container-build to required_status_checks, staged .squad/routing.md, applied master→main fixes, and used append pattern for orchestration-log and cross-agent histories.
+
+**Why:** Maintain factual consistency while respecting append-only governance and supply-chain hygiene.
+
+**Status:** Committed to squad/0-devops-foundations, all 17 threads replied.
+
+---
+
+## 2026-05-19 — PR #1 Copilot Review Round 3 Resolution
+
+**By:** Switch (for Kiko de Ángel)  
+**When:** 2026-05-19T20:04:40Z–20:04:41Z
+
+**What:** Addressed 2 net-new Copilot comments (sync-labels.ps1 and squad-issue-assign.yml).
+- **Fix A:** Removed `squad` + `squad:*` entries from `.github/scripts/sync-labels.ps1`. PS1 owns only static taxonomy (`kind:*`, `area:*`, `phase:*`). `.github/workflows/sync-squad-labels.yml` is authoritative for governance labels.
+- **Fix B:** In squad-issue-assign.yml, promoted `COPILOT_ASSIGN_TOKEN` to job-level env; gated acknowledgment step; added token guard; added remediation warning comment.
+
+**Bootstrap note:** After PR #1 merge, run `Sync Squad Labels` workflow via `workflow_dispatch` to ensure squad:* labels exist.
+
+**Status:** Committed on `squad/0-devops-foundations`, both threads replied.
+
+---
+
+## 2026-05-20 — Sprint 1 Foundry Agent Provisioning + Workflow Skeleton
+
+**By:** Mouse  
+**Requested by:** Kiko de Ángel  
+**Timestamp:** 2026-05-20T23:53:36Z
+
+### What
+
+Implemented Foundry-side bootstrap and Agent Host workflow skeleton:
+
+1. **`scripts/provision_agents.py`** — provisions three persisted Foundry agents (`wfm-intent-classifier`, `wfm-sql-builder`, `wfm-query-executor`) from YAML prompts using `azure-ai-projects>=2.0.0`.
+2. **Foundry prompts** under `src/agent_host/prompts/` for intent classification, SQL planning, and execution/result formatting.
+3. **`src/agent_host/app/schemas.py`** — strict Pydantic v2 workflow contracts for intent routing, SQL plans, execution formatting.
+4. **`src/agent_host/app/workflow.py`** — pre-MAF skeleton with Foundry agent orchestration, catalog caching, conditional pipeline, error handling, and TODO hooks for middleware, HMAC, Prompt Shields, SQL pre-validation, OTel.
+
+### Why
+
+MAF cannot CRUD Foundry agents, so Sprint 1 needs separate provisioning. Skeleton locks in q14 metadata-first route while staying compatible with local-MCP decision and three-agent minimum-privilege split.
+
+### Consequences
+
+- Foundry agent creation repeatable and versioned from repo-managed prompts.
+- Agent Host has explicit structured-output contracts and orchestration shell ready for native MAF/MCPStreamableHTTPTool wiring.
+- Error handling and caching codified early, reducing prompt drift and integration ambiguity.
+
+---
+
+## 2026-05-20 — MAF Workflow Design: Dynamic Metadata + Three Specialized Agents
+
+**By:** Mouse  
+**Date:** 2026-05-20T18:13:00Z
+
+### What
+
+Sprint 1 workflow splits WFM Supervisor into three specialized agents:
+1. Intent Classifier / Router
+2. SQL Builder
+3. Query Executor + Formatter
+
+Workflow stays fully metadata-driven via three MCP tools:
+- `listTables()` from `_metadata.catalog_tables`
+- `getSchema(table_name)` from `_metadata.catalog_columns` and `_metadata.catalog_joins`
+- `executeQuery(sql)` with SELECT-only validation, active-table whitelist, row cap, timeout
+
+### Why
+
+Preserves q14 (metadata-first) and minimum-privilege decision (§2.1):
+- Prompts unchanged when new domains added
+- Metadata carries schema knowledge, not prompt text
+- Router caches lightweight catalog once per session
+- SQL Builder reasons over only shortlisted tables
+- Executor enforces final safety before SQL Server
+
+### Consequences
+
+- Token usage below target envelope (cached listTables(), shortlisted getSchema())
+- Prompt maintenance cost flat as domains grow
+- SQL execution read-only, MI-authenticated via UAI `calabriomaf-uais`
+- Empty/failed metadata responses become first-class workflow outcomes
+
+---
+
+## 2026-05-20 — Sprint 1 WFM Database Baseline (Azure SQL)
+
+**By:** Tank  
+**Requested by:** Kiko de Ángel  
+**Timestamp:** 2026-05-20T18:13:00Z
+
+### What
+
+Sprint 1 database deliverable — four idempotent SQL scripts under `database/`:
+
+1. **`01-schemas-and-tables.sql`** — schemas (wfm, absence, overtime, scheduling, _metadata), tables (People, Absence, Overtime, Scheduling, metadata catalog), FK guards.
+2. **`02-views.sql`** — analytics schema, LLM-facing views (vw_PersonDetail, vw_AbsenceRequest, vw_OvertimeRequest, vw_Scheduling).
+3. **`03-seed-data.sql`** — one BU (CWFM-DEMO), 3 sites, 6 teams, 50 agents, 8 skills, 1000 absence requests, 200 overtime requests, 500 shifts, _metadata catalog deterministically seeded.
+4. **`04-grant-readonly.sql`** — UAI user `[calabriomaf-uais]` with read-only role (db_datareader), SELECT on analytics and _metadata, verification queries.
+
+### Why
+
+Establishes minimum secure, queryable WFM data platform for MCP SQL Executor and dynamic schema-discovery flow (q14/q15/q16), keeping tenant scoping and least-privilege explicit.
+
+### Impact
+
+- Backend has concrete Azure SQL baseline aligned with People/Absence/Overtime/Scheduling domains.
+- LLM query surface stable and documented through metadata catalog.
+- Security posture tightened by defaulting UAI to read-only.
+
+---
+
+## 2026-05-20 — Sprint 1 Query Validation Pack (Apoc)
+
+**By:** Apoc  
+**Recorded:** 2026-05-20T18:13:00Z  
+**Scope:** Sprint 1 acceptance assets for q14 (dynamic schema discovery PoC)
+
+### What
+
+Created reusable validation pack under `tests/query-validation/`:
+- 22 NL queries (20 safe + 2 adversarial)
+- Expected analytics views and tool-call envelopes
+- KPI targets (token, latency, cost, accuracy)
+- Execution guidance for manual scoring
+
+### Why
+
+PoC needs stable, reviewable test set measuring the real promise of fully dynamic path: correct supervisor answers with much lower prompt/schema payload vs. Calabrio baseline.
+
+### Decision Requested
+
+Adopt `tests/query-validation/` as canonical Sprint 1 acceptance pack for dynamic schema discovery evaluations and regression checks.
+
+### Consequences
+
+- Future workflow runs compared against same KPI targets and rubric.
+- BU-filter compliance is explicit pass/fail per safe business query.
+- Q21/Q22 establish minimum adversarial guardrail smoke test per validation cycle.
