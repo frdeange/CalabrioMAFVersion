@@ -12,6 +12,10 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T21:15:56.578+02:00: APIM CORS ownership moved to API-level policy
+- Operation-level policies for `/chat`, `/health`, and `/ready` should not implement manual `OPTIONS` preflight responses.
+- CORS response headers must not be reflected in operation outbound policies when APIM built-in API-level CORS is enabled.
+- Keep operation policies focused on auth, routing, throttling, and header hygiene to avoid policy conflicts.
 ### 2026-05-21T21:06:37.593+02:00: Local Docker Azure auth should reuse host Azure CLI cache
 - For local Docker workflows, both `agent-host` and `mcp-wfm` must mount `${USERPROFILE}/.azure` into `/root/.azure` read-only so `DefaultAzureCredential` can resolve `AzureCliCredential`.
 - Keep service-principal variables optional (`AZURE_CLIENT_ID`/`AZURE_CLIENT_SECRET`) because local auth now relies on `az login`, while ACA production still uses managed identity automatically via the same credential chain.
