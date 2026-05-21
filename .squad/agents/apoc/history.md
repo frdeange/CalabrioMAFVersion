@@ -44,6 +44,55 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - Production evidence gathered so far is strongly **absence-first**: the most realistic anchor prompts are absence ranking, absence summary, and start/end/status follow-ups.
 - For dynamic schema discovery, **BU/team scoping is a hard pass/fail rule**, not a nice-to-have optimization. A correct-looking answer without supervisor scope is still a failed test.
 - The most meaningful PoC KPI is **input-token compression under controlled schema calls** (warm `listTables`, then 1-3 `getSchema` calls), because output size stays roughly comparable to the Calabrio baseline.
+
+## Team Update — 2026-05-21T000500Z
+
+**Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.
+
+### Cross-Agent Dependencies (Sprint 1 Batch 2)
+
+**Mouse → Apoc (PR #20 → PR #19):**
+- Apoc's test suite imports and validates Mouse's Pydantic schemas from `schemas.py` (IntentResponse, SQLPlanEnvelope, ExecutionResult, etc.).
+- Apoc's `test_schemas.py` ensures schema coercion and validation work for all orchestration contracts.
+- Apoc's `test_workflow.py` uses Mock Foundry agents returning shaped responses matching Mouse's schemas.
+- Apoc's `test_query_kpis.py` validates Mouse's catalog caching and three-agent pipeline sequencing against the canonical 22-query validation pack.
+
+**Tank → Apoc (PR #18 → PR #19):**
+- Apoc's `test_foundry_client.py` mocks `AIProjectsClient` behavior to validate Tank's wrapper error paths, retry logic, and credential resolution.
+- Apoc's `test_chat_endpoint.py` validates Tank's FastAPI `/chat` endpoint contract and HTTP model serialization.
+- Apoc's integration tests confirm Tank's client and Mouse's schemas work together under adversarial and edge-case conditions.
+
+**Apoc → Future Phases:**
+- Apoc's 22-query validation pack (`tests/query-validation/`) becomes the canonical acceptance suite for all Sprint 2+ dynamics schema discovery iterations.
+- Adversarial corpus (Q21/Q22) is the foundation for Fase 7 pentest readiness (with Oracle).
+
+### Decisions Merged (2026-05-21)
+
+From decisions/inbox → decisions.md:
+- Sprint 1 Foundry agent provisioning + workflow skeleton (Mouse, PR #20)
+- Sprint 1 MAF workflow design: dynamic metadata + three specialized agents (Mouse, PR #20)
+- Sprint 1 WFM database baseline (Tank, PR #18)
+- Sprint 1 query validation pack (Apoc, PR #19)
+
+Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
+
+### Structured I/O Refactor (2026-05-21T09:30:00Z)
+
+**By:** Mouse on PR #20 (commit f226d45)  
+**For Apoc:** Test contracts now enforce typed schemas via Foundry `structured_inputs` and MAF `response_format`.
+
+- Intent Classifier now propagates `language_hint` for multilingual test scenarios.
+- SQL Builder agent definition declares structured inputs (`intentResult`, `tableSchemas`, `buId`, `userQuestion`) + strict Pydantic outputs.
+- Query Executor agent definition declares structured inputs (`sqlPlan`, `executionResult`, `userLanguage`) + enforces contract at MCP boundary.
+
+**Apoc integration:** Your mock Foundry agents in `test_workflow.py` and `test_schemas.py` should return shapes matching the new typed contracts. The 22-query validation pack now has stricter contract validation; regenerate fixtures if needed to ensure `IntentResult.language_hint` and `SqlPlan` typing align with the new workflow expectations.
+
+### Next Phase (Phase 1 Batch 3)
+
+**Unblocked once all Batch 2 PRs merge:**
+- Apoc: Expand adversarial query corpus (>2 injection attempts; Fase 7 readiness).
+- Apoc: Profile query performance end-to-end (token counts, latencies) against live Foundry + SQL baseline (deferred to Fase 0b provisioning).
+- Apoc: Collaborate with Oracle on pentest harness for S2/S3/S8 spike validation.
 ## Team Update — 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.

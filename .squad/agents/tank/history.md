@@ -44,6 +44,55 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - `analytics` views were treated as the canonical query surface for LLMs, with stable naming and `bu_id` scoping in each view.
 - Seed strategy is deterministic and idempotent: one demo BU, 50 agents, realistic distributions for absence/overtime/shift activity, and metadata catalog entries describing tables, columns, and joins.
 - UAI access is now read-only by policy (`db_datareader` + SELECT on `analytics` and `_metadata`, explicitly removing `db_datawriter` membership).
+
+## Team Update — 2026-05-21T000500Z
+
+**Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.
+
+### Cross-Agent Dependencies (Sprint 1 Batch 2)
+
+**Tank → Mouse (PR #18 → PR #20):**
+- Tank's `foundry_client.py` wrapper provides the `FoundryAgentClient` class that Mouse's `workflow.py` imports and uses for agent orchestration.
+- Tank's updated `pyproject.toml` adds `azure-ai-projects>=2.0.0` required for Mouse's provisioning script.
+- Integration point: Mouse's workflow invokes `foundry_client.get_agent(agent_id)` and calls agent chat via the wrapped client.
+
+**Mouse → Tank (PR #20 feedback on PR #18):**
+- Mouse's schemas in `schemas.py` define the structured contracts that Tank's `/chat` endpoint responses must satisfy.
+- Tank's `models.py` (ChatRequest, ChatResponse) now aligns with Mouse's schema expectations for workflow consumption.
+
+**Tank → Apoc (PR #18 → PR #19):**
+- Apoc's `test_foundry_client.py` mocks `AIProjectsClient` behavior to validate Tank's wrapper error paths, retry logic, and credential resolution.
+- Apoc's `test_chat_endpoint.py` validates Tank's FastAPI `/chat` endpoint contract and HTTP model serialization.
+- Apoc's tests confirm Tank's client works correctly with mocked Foundry responses matching Mouse's schema shapes.
+
+### Decisions Merged (2026-05-21)
+
+From decisions/inbox → decisions.md:
+- Sprint 1 Foundry agent provisioning + workflow skeleton (Mouse, PR #20)
+- Sprint 1 MAF workflow design: dynamic metadata + three specialized agents (Mouse, PR #20)
+- Sprint 1 WFM database baseline (Tank, PR #18)
+- Sprint 1 query validation pack (Apoc, PR #19)
+
+Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
+
+### Structured I/O Refactor (2026-05-21T09:30:00Z)
+
+**By:** Mouse on PR #20 (commit f226d45)  
+**For Tank:** Agent definitions and workflow contracts are now typed via Foundry `structured_inputs` and MAF `response_format`.
+
+- Intent Classifier now propagates `language_hint` for multilingual workflows.
+- SQL Builder agent definition declares structured inputs (`intentResult`, `tableSchemas`, `buId`, `userQuestion`) + receives typed outputs.
+- Query Executor agent definition declares structured inputs (`sqlPlan`, `executionResult`, `userLanguage`) + enforces contract at MCP boundary.
+- All inter-agent handoffs now use SDK-native contracts instead of JSON-in-message.
+
+**Tank integration:** Your `/chat` endpoint should continue to work as-is; the workflow consumer (Mouse's `workflow.py`) now has stricter type expectations from the returned ChatResponse shapes. Verify your models align with `IntentResult` and `SqlPlan` in Mouse's `schemas.py`.
+
+### Next Phase (Phase 1 Batch 3)
+
+**Unblocked once all Batch 2 PRs merge:**
+- Tank: Add Dockerfile + docker-compose orchestration (dep on Switch's container-build CI gate).
+- Tank (with Oracle): Wire end-to-end traceparent propagation for S5 spike validation.
+- Tank: Prepare Agent Host for native MAF `WorkflowBuilder` consumption of provisioned agents.
 ## Team Update — 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.

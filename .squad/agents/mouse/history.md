@@ -45,6 +45,11 @@
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
 
+### 2026-05-21: Prefer SDK-native contracts over prompt-formatted JSON
+- Foundry Agent Service structured inputs (`{{variableName}}` + `structured_inputs`) should carry inter-agent context instead of serializing JSON blobs into the message body.
+- MAF/agent SDK structured outputs via `options={"response_format": PydanticModel}` are the durable contract for Intent and SQL planning; prompt text should describe behavior, not JSON syntax.
+- When the intent step still uses JSON text as its free-text payload, session context must be converted to JSON-safe primitives before serialization because cached Pydantic models can otherwise break later turns.
+
 ## Team Update — 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.
@@ -54,3 +59,45 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - Apoc: Query validation + KPI targets → PR #17 ✓
 
 Status: All agents delivered on scope.
+
+### 2026-05-20: Foundry provisioning + pre-MAF workflow shell
+- Foundry Agent Service creation must stay outside the runtime workflow; a standalone Python provisioner using `AIProjectClient.agents.create_version(...)` is the correct bootstrap path before MAF consumes persisted agents.
+- Prompt ownership is cleanly split: three small YAML prompts map 1:1 to Intent, SQL Builder, and Query Executor, while the workflow shell owns catalog caching, schema fan-out, and safe failure behavior.
+- Until native MAF packages are wired into `agent_host`, the most compatible interim pattern is: Foundry chat via `project.get_openai_client()`, local MCP invoked by the host, and explicit TODO seams for middleware, HMAC, SQL pre-validation, and OTel.
+
+## Team Update — 2026-05-21T000500Z
+
+**Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.
+
+### Cross-Agent Dependencies (Sprint 1 Batch 2)
+
+**Tank → Mouse (PR #18 → PR #20):**
+- Tank's `foundry_client.py` wrapper provides the `FoundryAgentClient` class that Mouse's `workflow.py` now imports and uses for agent orchestration.
+- Tank's updated `pyproject.toml` adds `azure-ai-projects>=2.0.0` required for Mouse's provisioning script.
+- Integration point: Mouse's workflow invokes `foundry_client.get_agent(agent_id)` and calls agent chat via the wrapped client.
+
+**Mouse → Apoc (PR #20 → PR #19):**
+- Apoc's test suite imports and validates Mouse's Pydantic schemas from `schemas.py` (IntentResponse, SQLPlanEnvelope, ExecutionResult, etc.).
+- Apoc's `test_schemas.py` ensures schema coercion and validation work for all orchestration contracts.
+- Apoc's `test_workflow.py` uses Mock Foundry agents returning shaped responses matching Mouse's schemas.
+
+**Tank → Apoc (PR #18 → PR #19):**
+- Apoc's `test_foundry_client.py` mocks `AIProjectsClient` behavior to validate Tank's wrapper error paths, retry logic, and credential resolution.
+- Apoc's `test_chat_endpoint.py` validates Tank's FastAPI `/chat` endpoint contract and HTTP model serialization.
+
+### Decisions Merged (2026-05-21)
+
+From decisions/inbox → decisions.md:
+- Sprint 1 Foundry agent provisioning + workflow skeleton (Mouse, PR #20)
+- Sprint 1 MAF workflow design: dynamic metadata + three specialized agents (Mouse, PR #20)
+- Sprint 1 WFM database baseline (Tank, PR #18)
+- Sprint 1 query validation pack (Apoc, PR #19)
+
+Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
+
+### Next Phase (Phase 1 Batch 3)
+
+**Unblocked once all Batch 2 PRs merge:**
+- Mouse: Wire native MAF `WorkflowBuilder` + `MCPStreamableHTTPTool` to replace pre-MAF skeleton (depends on `agent-framework>=1.0` landing in `pyproject.toml`).
+- Tank: Add Dockerfile + docker-compose orchestration (dep on Switch's container-build CI gate).
+- Apoc: Expand adversarial corpus and profile query performance under load.
