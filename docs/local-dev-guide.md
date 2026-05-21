@@ -6,7 +6,8 @@ Use APIM as the ingress while routing backend traffic to your local service thro
 ## Prerequisites
 - Docker Desktop (or local backend on port 8000)
 - DevTunnel CLI authenticated and available in PATH
-- Azure CLI authenticated (`az login`) before running `docker compose up`
+- Azure CLI authenticated on your host (`az login`) before running `docker compose up`
+- `.azure/` is volume-mounted into the container, so host Azure CLI tokens are reused by the agent-host container
 
 ## One-time setup
 Run:
@@ -54,3 +55,4 @@ devtunnel show {tunnel-id}
 ## Troubleshooting
 - **Missing `.devtunnel-id`**: run `.\scripts\devtunnel-setup.ps1` first.
 - **Port mismatch**: rerun setup with the correct `-Port` value.
+- **Agent host Azure auth fails**: run `az login` on your host machine first. If needed (for mount issues or expired tokens), run `docker exec -it calabriomafversion-agent-host-1 az login`.
