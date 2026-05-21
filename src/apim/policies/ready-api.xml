@@ -1,10 +1,9 @@
 <policies>
-  <!-- Host header: derived from Named Value "backend-url" so each developer can use their own DevTunnel URL. -->
+  <!-- Host is derived from API Web service URL; set backend-url/Web service URL to the same DevTunnel port URL. -->
   <inbound>
     <base />
-    <set-backend-service base-url="{{backend-url}}" />
     <set-header name="Host" exists-action="override">
-      <value>@(new System.Uri("{{backend-url}}").Host)</value>
+      <value>@(new System.Uri(context.Api.ServiceUrl.ToString()).Host)</value>
     </set-header>
   </inbound>
   <backend>

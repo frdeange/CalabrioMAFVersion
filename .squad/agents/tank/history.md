@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T15:31:03.551+02:00: APIM Host header derivation should follow API Settings service URL
+- Operation policies for `/health`, `/ready`, and `/chat` should derive `Host` from `context.Api.ServiceUrl` so routing follows the API Web service URL configured per environment.
+- Keep `backend-url` Named Value and API Web service URL aligned to the same DevTunnel port URL; this keeps per-developer setup to a single URL value.
+- Health/readiness probes should remain unauthenticated pass-through policies with short timeouts and no backend override policy.
+
 ### 2026-05-21T15:24:47.327+02:00: DevTunnel/APIM routing invariant for local E2E
 - APIM must target the DevTunnel **port URL** (from `devtunnel show` Ports output), not the friendly tunnel URL.
 - DevTunnel request routing depends on the HTTP `Host` header; APIM operation policies must set `Host` from `{{backend-url}}` dynamically using `@(new System.Uri("{{backend-url}}").Host)`.
