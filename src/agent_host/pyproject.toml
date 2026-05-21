@@ -31,7 +31,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["app"]
+packages = ["app", "app.middleware"]
 
 [tool.pytest.ini_options]
 markers = [

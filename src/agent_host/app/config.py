@@ -1,4 +1,4 @@
-from pydantic import Field
+﻿from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +28,18 @@ class Settings(BaseSettings):
     )
     default_bu_id: str = Field(default="", alias="DEFAULT_BU_ID")
     apim_gateway_url: str = Field(default="", alias="APIM_GATEWAY_URL")
+
+    # --- Safety middleware ---
+    content_safety_endpoint: str = Field(default="", alias="CONTENT_SAFETY_ENDPOINT")
+    content_safety_key: str = Field(default="", alias="CONTENT_SAFETY_KEY")
+    prompt_shields_fail_mode: str = Field(default="closed", alias="PROMPT_SHIELDS_FAIL_MODE")
+    pii_action: str = Field(default="log", alias="PII_ACTION")
+    hmac_secret: str = Field(default="", alias="HMAC_SECRET")
+    sql_allowed_views: str = Field(
+        default="",
+        alias="SQL_ALLOWED_VIEWS",
+        description="Comma-separated list of allowed analytics views",
+    )
 
 
 settings = Settings()
