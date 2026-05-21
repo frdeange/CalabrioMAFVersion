@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import MagicMock
+
+from app.schemas import ExecutionResult, IntentResult, IntentType, QueryResult, SqlPlan
 
 import pytest
 import sqlglot
@@ -212,7 +215,86 @@ def test_bu_filter_enforcement_in_generated_sql() -> None:
     asyncio.run(_run())
 
 
+@pytest.mark.skipif(workflow_module is None, reason="app.workflow not available yet")
+def test_run_streaming_emits_frontend_event_contract() -> None:
+    workflow = workflow_module.WFMWorkflow.__new__(workflow_module.WFMWorkflow)
+    workflow._run_intent = MagicMock(
+        return_value=IntentResult(
+            intent=IntentType.DATA_QUERY,
+            candidate_tables=["analytics.vw_PersonDetail"],
+            language_hint="en",
+            cache_action="reuse",
+        )
+    )
+    workflow._run_sql_builder = MagicMock(
+        return_value=SqlPlan(
+            sql="SELECT COUNT(*) AS total_agents FROM analytics.vw_PersonDetail WHERE bu_id = 'BU-001'",
+            tables_used=["analytics.vw_PersonDetail"],
+            assumptions=[],
+            explanation="Count agents",
+            error=None,
+        )
+    )
+    workflow._execute_query = MagicMock(
+        return_value=ExecutionResult(rows=[{"total_agents": 5}], row_count=1, execution_ms=21)
+    )
+    workflow._run_executor = MagicMock(
+        return_value=QueryResult(
+            answer="There are 5 agents.",
+            row_count=1,
+            execution_ms=21,
+            query_summary="1 tables, 1 rows",
+        )
+    )
+    workflow._resolve_conversation_id = MagicMock(return_value="conv-stream")
+
+    events = list(
+        workflow.run_streaming(
+            "headcount",
+            "BU-001",
+            {"conversation_id": "conv-stream"},
+        )
+    )
+
+    assert [event.event for event in events] == [
+        "intent_resolved",
+        "sql_building",
+        "sql_ready",
+        "executing",
+        "result",
+        "done",
+    ]
+    assert [event.executor for event in events] == [
+        "intent",
+        "sql-builder",
+        "sql-builder",
+        "query-executor",
+        "query-executor",
+        "workflow",
+    ]
+    assert events[-2].data["message"] == "There are 5 agents."
+    assert all(event.data["conversation_id"] == "conv-stream" for event in events)
+
+
 @pytest.mark.integration
 @pytest.mark.skipif(workflow_module is None, reason="app.workflow not available yet")
 def test_real_workflow_module_exists_for_future_integration() -> None:
     assert workflow_module is not None
+
+
+@pytest.mark.skipif(workflow_module is None, reason="app.workflow not available yet")
+def test_call_foundry_agent_failure_raises_workflow_execution_error() -> None:
+    workflow = workflow_module.WFMWorkflow.__new__(workflow_module.WFMWorkflow)
+    workflow._project = MagicMock()
+    workflow._project.agents.get.return_value = object()
+    workflow._openai = MagicMock()
+    workflow._openai.responses.create.side_effect = RuntimeError("Foundry unavailable")
+    workflow._known_agents = set()
+    workflow._known_agents_lock = threading.Lock()
+
+    with pytest.raises(workflow_module.WorkflowExecutionError, match="Foundry agent call failed"):
+        workflow._call_foundry_agent(
+            agent_name="wfm-intent-classifier",
+            conversation_id="conv-1",
+            message="headcount",
+        )

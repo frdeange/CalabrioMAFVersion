@@ -1,10 +1,10 @@
 # Project Context
 
-- **Owner:** Kiko de Ángel
-- **Project:** WFM Supervisor Assist — MAF Workflow secuencial con routing condicional, 3 FoundryAgent clients, middleware (PII / PromptShields / HMAC / SQL pre-val / audit), MCP local binding con `MCPStreamableHTTPTool`, OTel a App Insights.
-- **Stack:** Python 3.12+ · `agent-framework>=1.0` · `agent-framework-foundry>=1.0` · `mcp>=1.0` · Pydantic v2 · httpx · `azure-monitor-opentelemetry` · `azure-ai-contentsafety`
+- **Owner:** Kiko de ï¿½ngel
+- **Project:** WFM Supervisor Assist ï¿½ MAF Workflow secuencial con routing condicional, 3 FoundryAgent clients, middleware (PII / PromptShields / HMAC / SQL pre-val / audit), MCP local binding con `MCPStreamableHTTPTool`, OTel a App Insights.
+- **Stack:** Python 3.12+ ï¿½ `agent-framework>=1.0` ï¿½ `agent-framework-foundry>=1.0` ï¿½ `mcp>=1.0` ï¿½ Pydantic v2 ï¿½ httpx ï¿½ `azure-monitor-opentelemetry` ï¿½ `azure-ai-contentsafety`
 - **Architecture proposal:** `C:\repos\copilotCLIContainer\propuesta-arquitectura-modernizada.md`
-- **Repo path:** `apps/agent-host/src/` — `main.py`, `agents_factory.py`, `workflow_factory.py`, `middleware/`, `models.py`, `observability.py`
+- **Repo path:** `apps/agent-host/src/` ï¿½ `main.py`, `agents_factory.py`, `workflow_factory.py`, `middleware/`, `models.py`, `observability.py`
 - **Created:** 2026-05-19
 - **Universe:** The Matrix
 
@@ -18,25 +18,25 @@
 - `executeQuery()` is the final enforcement point: MI-only SQL auth, `sqlglot` SELECT-only validation, active-table whitelist, 30s timeout, and a 1000-row cap all belong in the MCP layer.
 
 ### 2026-05-19: Initial context
-- **Decisión clave:** Local MCP (no Hosted) — MAF orquesta el bucle de tool calls. Esto habilita `FunctionMiddleware` y propagación controlada de `x-user-context` (§2.4).
-- **3 FoundryAgent clients:** Intent (sin tools), SqlBuilder (Schema MCP), Executor (SqlExec MCP). Principio de mínimo privilegio (§2.1).
-- **Structured outputs strict** — `response_format: json_schema` en Foundry; `.structured_output(Model)` deserializa en MAF. Spike S4 valida.
-- **Conditional routing** — `WorkflowBuilder.add_edge(intent, sqlbuilder, condition=lambda r: r.intent_type == "DataQuery")`. Spike S6 valida.
-- **OTel atributos custom obligatorios** — `agent.name`, `tool.name`, `user.oid`, `guardrail.layer`, `guardrail.outcome`, `correlation.id`.
-- **Sprint 0 prioridad:** S1, S2, S3 son **bloqueantes**. Sin S1 verde, no se construye nada más del Agent Host.
+- **Decisiï¿½n clave:** Local MCP (no Hosted) ï¿½ MAF orquesta el bucle de tool calls. Esto habilita `FunctionMiddleware` y propagaciï¿½n controlada de `x-user-context` (ï¿½2.4).
+- **3 FoundryAgent clients:** Intent (sin tools), SqlBuilder (Schema MCP), Executor (SqlExec MCP). Principio de mï¿½nimo privilegio (ï¿½2.1).
+- **Structured outputs strict** ï¿½ `response_format: json_schema` en Foundry; `.structured_output(Model)` deserializa en MAF. Spike S4 valida.
+- **Conditional routing** ï¿½ `WorkflowBuilder.add_edge(intent, sqlbuilder, condition=lambda r: r.intent_type == "DataQuery")`. Spike S6 valida.
+- **OTel atributos custom obligatorios** ï¿½ `agent.name`, `tool.name`, `user.oid`, `guardrail.layer`, `guardrail.outcome`, `correlation.id`.
+- **Sprint 0 prioridad:** S1, S2, S3 son **bloqueantes**. Sin S1 verde, no se construye nada mï¿½s del Agent Host.
 
-### 2026-05-19: Team update — DevOps foundations in flight
+### 2026-05-19: Team update ï¿½ DevOps foundations in flight
 - Switch completed DevOps bootstrap (PR #1 on `squad/0-devops-foundations`).
-- **Issue templates:** ?? bug · ? feature · ?? security · ?? test · ?? docs · ??? infra · ?? spike · ?? chore · ?? release
+- **Issue templates:** ?? bug ï¿½ ? feature ï¿½ ?? security ï¿½ ?? test ï¿½ ?? docs ï¿½ ??? infra ï¿½ ?? spike ï¿½ ?? chore ï¿½ ?? release
 - **Labels:** `area:*` (technical domain) + `phase:0a-spike` through `phase:8-tuning`
 - **CODEOWNERS auto-routing** now active. GitHub assigns reviewers per path.
 - All team PRs now follow Conventional Commits + branch protection on `master` and `develop`.
-- Reference: `.squad/decisions.md` § "Switch — DevOps Foundations Bootstrap"
+- Reference: `.squad/decisions.md` ï¿½ "Switch ï¿½ DevOps Foundations Bootstrap"
 
-### 2026-05-19: Team update — Sprint 0 planning delivered
-- Morpheus delivered Sprint 0 plan (PR #10, `squad/sprint-0-planning` branch) with 8 spike issues (#2–#9).
-- **Sprint 0 gate:** 5 working days, target 2026-05-26. Validates 8 assumptions before committing design (§9.6).
-- **Mouse's queue:** #2 (S1 FoundryAgent + MCP) · #3 (S2 middleware) · #4 (S3 x-user-context) · #5 (S4 structured outputs) · #7 (S6 conditional routing) · #8 (S7 SSE streaming)
+### 2026-05-19: Team update ï¿½ Sprint 0 planning delivered
+- Morpheus delivered Sprint 0 plan (PR #10, `squad/sprint-0-planning` branch) with 8 spike issues (#2ï¿½#9).
+- **Sprint 0 gate:** 5 working days, target 2026-05-26. Validates 8 assumptions before committing design (ï¿½9.6).
+- **Mouse's queue:** #2 (S1 FoundryAgent + MCP) ï¿½ #3 (S2 middleware) ï¿½ #4 (S3 x-user-context) ï¿½ #5 (S4 structured outputs) ï¿½ #7 (S6 conditional routing) ï¿½ #8 (S7 SSE streaming)
 - **Spike-results.md** tracker committed; verdicts logged as spikes complete.
 - **4 ambiguities flagged for Kiko** (recorded in `.squad/decisions.md`): owner confirmation, S8 sandbox approval, S5 APIM stub, Sprint 0 duration.
 - Reference: `.squad/orchestration-log/2026-05-19T133800Z-morpheus.md`
@@ -50,7 +50,7 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - MAF/agent SDK structured outputs via `options={"response_format": PydanticModel}` are the durable contract for Intent and SQL planning; prompt text should describe behavior, not JSON syntax.
 - When the intent step still uses JSON text as its free-text payload, session context must be converted to JSON-safe primitives before serialization because cached Pydantic models can otherwise break later turns.
 
-## Team Update — 2026-05-20T18:21:00Z
+## Team Update ï¿½ 2026-05-20T18:21:00Z
 
 **Orchestration Complete:** Sprint 1 kickoff successful.
 
@@ -65,7 +65,7 @@ Status: All agents delivered on scope.
 - Prompt ownership is cleanly split: three small YAML prompts map 1:1 to Intent, SQL Builder, and Query Executor, while the workflow shell owns catalog caching, schema fan-out, and safe failure behavior.
 - Until native MAF packages are wired into `agent_host`, the most compatible interim pattern is: Foundry chat via `project.get_openai_client()`, local MCP invoked by the host, and explicit TODO seams for middleware, HMAC, SQL pre-validation, and OTel.
 
-## Team Update — 2026-05-21T000500Z
+## Team Update ï¿½ 2026-05-21T000500Z
 
 **Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.
 
@@ -102,13 +102,13 @@ Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
 - Tank: Add Dockerfile + docker-compose orchestration (dep on Switch's container-build CI gate).
 - Apoc: Expand adversarial corpus and profile query performance under load.
 
-## Team Update — 2026-05-21T11:25:00Z
+## Team Update ï¿½ 2026-05-21T11:25:00Z
 
 **Sprint 2 Batch 1:** Real-time streaming architecture delivery.
 
 ### Mouse Work (PR #26)
 
-**Issue:** #26 — WorkflowEvent schema + run_streaming() generator  
+**Issue:** #26 ï¿½ WorkflowEvent schema + run_streaming() generator  
 **Status:** 48 tests pass, 2 xfailed
 
 **Delivered:**
@@ -144,13 +144,18 @@ Coordinator provisioned 3 Foundry agents:
 Issue #21 closed.
 
 
-### 2026-05-21: Safety middleware — sqlglot API and Presidio model behavior
-- sqlglot exp.Table nodes expose 	able.db and 	able.name as string properties — never use 	able.args.get("db") which returns an Identifier object, not a string.
+### 2026-05-21: Safety middleware ï¿½ sqlglot API and Presidio model behavior
+- sqlglot exp.Table nodes expose 	able.db and 	able.name as string properties ï¿½ never use 	able.args.get("db") which returns an Identifier object, not a string.
 - exp.Truncate does not exist in sqlglot; use exp.TruncateTable instead.
-- Presidio's US_SSN recognizer requires spaCy NLP context tokens that are absent in minimal inputs — in test environments without a full spaCy pipeline, SSN detection falls back to regex-based detection. Design tests to either disable the analyzer instance or use patterns that Presidio reliably detects (email at 1.0, phone with keyword at 0.75).
-- The 4 middleware layers (PromptShields, PII, HMAC, SQLValidator) must remain **unwired from workflow.py** at creation time — they are instantiated by uild_middleware_chain() and consumed by the wiring sprint, keeping each layer independently testable.
+- Presidio's US_SSN recognizer requires spaCy NLP context tokens that are absent in minimal inputs ï¿½ in test environments without a full spaCy pipeline, SSN detection falls back to regex-based detection. Design tests to either disable the analyzer instance or use patterns that Presidio reliably detects (email at 1.0, phone with keyword at 0.75).
+- The 4 middleware layers (PromptShields, PII, HMAC, SQLValidator) must remain **unwired from workflow.py** at creation time; they are instantiated by build_middleware_chain() and consumed by the wiring sprint, keeping each layer independently testable.
 - Presidio emits noisy language-mismatch warnings at import for non-English recognizers; these can be suppressed in CI with --log-level ERROR.
-## 2026-05-21T11:19:14.8425899Z — Safety Middleware Stack Complete (PR #34)
+
+### 2026-05-21T16:09:13.440+02:00: Workflow wiring for APIM identity + Foundry-backed SSE chat
+- `workflow.py` now exposes `AgentHostWorkflow` for the FastAPI host while keeping `WFMWorkflow` for direct tests, so `/chat` can instantiate the real workflow without breaking existing test seams.
+- The host now captures APIM identity headers (`x-user-oid`, `x-user-name`, `x-user-upn`, `x-user-roles`, `x-user-teams`) into `session_context`, and the workflow reuses the caller conversation id across Foundry agent hops instead of creating a fresh conversation per hop.
+- Streaming events now follow the frontend contract (`intent_resolved` -> `sql_building` -> `sql_ready` -> `executing` -> `result` -> `done`) with `conversation_id` in `data`, and missing Foundry agents fail safely with an explicit Azure AI Foundry Studio provisioning message.
+## 2026-05-21T11:19:14.8425899Z ï¿½ Safety Middleware Stack Complete (PR #34)
 
 Delivered 5 middleware modules (PromptShields, PII, HMAC, SQL validation) with 45 tests passing. Scribe recorded in orchestration log.
 
