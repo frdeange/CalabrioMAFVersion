@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatRequest(BaseModel):
@@ -16,3 +18,15 @@ class ChatResponse(BaseModel):
     answer: str | None = None
     conversation_id: str | None = None
     execution_ms: int | None = None
+
+
+class WorkflowEventResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    event: str | None = None
+    stage: str | None = None
+    status: str | None = None
+    message: str | None = None
+    conversation_id: str | None = None
+    payload: dict[str, Any] | None = None
+    error: str | None = None
