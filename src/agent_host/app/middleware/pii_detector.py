@@ -1,4 +1,4 @@
-﻿"""PII detection middleware — Presidio (local) with regex fallback."""
+"""PII detection middleware — Presidio (local) with regex fallback."""
 from __future__ import annotations
 
 import logging

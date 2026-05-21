@@ -1,4 +1,4 @@
-﻿"""HMAC signing/verification for inter-agent payload integrity."""
+"""HMAC signing/verification for inter-agent payload integrity."""
 from __future__ import annotations
 
 import hashlib
@@ -21,12 +21,20 @@ class HMACSigner:
             raise ValueError("HMAC_SECRET must not be empty")
         self._key = secret.encode()
 
-    def sign(self, payload: str) -> str:
+    @staticmethod
+    def _as_bytes(value: str | bytes) -> bytes:
+        if isinstance(value, bytes):
+            return value
+        if isinstance(value, str):
+            return value.encode()
+        raise TypeError("HMAC payload/signature must be str or bytes")
+
+    def sign(self, payload: str | bytes) -> str:
         """Return a hex-encoded HMAC-SHA256 signature for *payload*."""
         with tracer.start_as_current_span("guardrail.hmac") as span:
             span.set_attribute("guardrail.layer", "hmac")
             try:
-                sig = hmac.new(self._key, payload.encode(), hashlib.sha256).hexdigest()
+                sig = hmac.new(self._key, self._as_bytes(payload), hashlib.sha256).hexdigest()
                 span.set_attribute("guardrail.outcome", "signed")
                 return sig
             except Exception as exc:
@@ -34,12 +42,16 @@ class HMACSigner:
                 span.record_exception(exc)
                 raise
 
-    def verify(self, payload: str, signature: str) -> bool:
+    def verify(self, payload: str | bytes, signature: str | bytes) -> bool:
         """Return True if *signature* is valid for *payload* (timing-safe)."""
-        expected = hmac.new(self._key, payload.encode(), hashlib.sha256).hexdigest()
-        return hmac.compare_digest(expected.encode(), signature.encode())
+        if not signature or not isinstance(signature, (str, bytes)):
+            return False
+        expected = hmac.new(self._key, self._as_bytes(payload), hashlib.sha256).hexdigest()
+        if isinstance(signature, bytes):
+            return hmac.compare_digest(expected.encode(), signature)
+        return hmac.compare_digest(expected, signature)
 
-    def verify_or_raise(self, payload: str, signature: str) -> None:
+    def verify_or_raise(self, payload: str | bytes, signature: str | bytes) -> None:
         """Verify and raise GuardrailViolation if the signature is invalid."""
         with tracer.start_as_current_span("guardrail.hmac") as span:
             span.set_attribute("guardrail.layer", "hmac")

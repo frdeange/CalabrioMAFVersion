@@ -1,4 +1,4 @@
-﻿"""Tests for PIIDetectorMiddleware."""
+"""Tests for PIIDetectorMiddleware."""
 from __future__ import annotations
 
 import pytest

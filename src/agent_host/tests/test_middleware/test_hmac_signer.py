@@ -46,6 +46,13 @@ def test_verify_empty_signature():
     assert s.verify("any payload", "") is False
 
 
+def test_verify_bytes_payload_and_signature():
+    s = _signer()
+    payload = b'{"tables": ["vw_agents"]}'
+    sig = s.sign(payload).encode()
+    assert s.verify(payload, sig) is True
+
+
 def test_verify_or_raise_valid():
     s = _signer()
     payload = '{"tables": ["vw_agents"]}'

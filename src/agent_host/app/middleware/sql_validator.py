@@ -1,4 +1,4 @@
-﻿"""SQL pre-validation middleware — SELECT-only, whitelisted views, row-limit injection."""
+"""SQL pre-validation middleware — SELECT-only, whitelisted views, row-limit injection."""
 from __future__ import annotations
 
 import logging
@@ -15,6 +15,7 @@ tracer = trace.get_tracer(__name__)
 _FORBIDDEN_STATEMENT_TYPES = (
     exp.Insert, exp.Update, exp.Delete, exp.Drop, exp.Create,
     exp.Alter, exp.Command, exp.Transaction, exp.Merge, exp.TruncateTable,
+    exp.Grant, exp.Into, exp.Revoke, exp.Use,
 )
 
 _DEFAULT_ROW_LIMIT = 1000
@@ -55,50 +56,79 @@ class SQLValidator:
                 ) from exc
 
     def _run(self, sql: str, span: object) -> str:
-        statements = sqlglot.parse(sql, dialect="tsql")
+        statements = sqlglot.parse(sql, read="tsql")
         if not statements:
             self._violation(span, "empty_sql", "No SQL statement found")
         if len(statements) > 1:
             self._violation(span, "multiple_statements", "Only a single SQL statement is allowed")
         stmt = statements[0]
-        if not isinstance(stmt, exp.Select):
-            for forbidden in _FORBIDDEN_STATEMENT_TYPES:
-                if isinstance(stmt, forbidden):
-                    self._violation(
-                        span, "forbidden_statement",
-                        f"Statement type {type(stmt).__name__} is not allowed; only SELECT",
-                    )
+        self._check_forbidden_nodes(stmt, span)
+        if not self._contains_select(stmt):
             self._violation(span, "non_select", "Only SELECT statements are allowed")
         self._check_tables(stmt, span)
-        self._check_unions(stmt, span)
         return self._inject_row_limit(stmt)
 
+    @staticmethod
+    def _contains_select(stmt: exp.Expression) -> bool:
+        return isinstance(stmt, exp.Select) or stmt.find(exp.Select) is not None
+
+    def _check_forbidden_nodes(self, stmt: exp.Expression, span: object) -> None:
+        for forbidden in _FORBIDDEN_STATEMENT_TYPES:
+            node = stmt.find(forbidden)
+            if node is not None:
+                self._violation(
+                    span,
+                    "forbidden_statement",
+                    f"Statement type {type(node).__name__} is not allowed; only SELECT",
+                )
+
     def _check_tables(self, stmt: exp.Expression, span: object) -> None:
+        cte_names = self._get_cte_names(stmt)
         for table in stmt.find_all(exp.Table):
+            catalog = (table.catalog or "").lower()
             db = (table.db or "").lower()
             name = (table.name or "").lower()
+            if name in cte_names and not catalog and not db:
+                continue
+            if catalog:
+                self._violation(span, "forbidden_catalog", f"Catalog '{catalog}' is not allowed")
             if db and db != self._schema:
                 self._violation(span, "forbidden_schema", f"Schema '{db}' is not allowed; use '{self._schema}'")
             if self._allowed and name not in self._allowed:
                 self._violation(span, "non_whitelisted_table", f"Table/view '{name}' is not in the allowed list")
 
-    def _check_unions(self, stmt: exp.Expression, span: object) -> None:
-        for union in stmt.find_all(exp.Union):
-            for side in (union.left, union.right):
-                if side is None:
-                    continue
-                for table in side.find_all(exp.Table):
-                    db = (table.db or "").lower()
-                    name = (table.name or "").lower()
-                    if db and db != self._schema:
-                        self._violation(span, "union_forbidden_schema", f"UNION references forbidden schema '{db}'")
-                    if self._allowed and name not in self._allowed:
-                        self._violation(span, "union_non_whitelisted", f"UNION references non-whitelisted source '{name}'")
+    @staticmethod
+    def _get_cte_names(stmt: exp.Expression) -> set[str]:
+        names: set[str] = set()
+        for cte in stmt.find_all(exp.CTE):
+            alias = getattr(cte, "alias", "") or getattr(cte, "alias_or_name", "")
+            if alias:
+                names.add(str(alias).lower())
+        return names
 
-    def _inject_row_limit(self, stmt: exp.Select) -> str:
-        if stmt.args.get("limit") is None:
-            stmt = stmt.limit(self._row_limit)
+    def _inject_row_limit(self, stmt: exp.Expression) -> str:
+        select = stmt if isinstance(stmt, exp.Select) else stmt.find(exp.Select)
+        if select is None:
+            return stmt.sql(dialect="tsql")
+
+        limit = select.args.get("limit")
+        if limit is None:
+            select.set("limit", exp.Limit(expression=exp.Literal.number(self._row_limit)))
+        else:
+            limit_value = self._extract_limit_value(limit)
+            if limit_value is not None and limit_value > self._row_limit:
+                select.set("limit", exp.Limit(expression=exp.Literal.number(self._row_limit)))
         return stmt.sql(dialect="tsql")
+
+    @staticmethod
+    def _extract_limit_value(limit: exp.Expression) -> int | None:
+        expression = getattr(limit, "expression", None)
+        if expression is None:
+            return None
+        try:
+            return int(expression.this)
+        except (AttributeError, TypeError, ValueError):
+            return None
 
     def _violation(self, span: object, violation_type: str, reason: str) -> None:
         if hasattr(span, "set_attribute"):

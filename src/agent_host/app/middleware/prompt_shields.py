@@ -1,4 +1,4 @@
-﻿"""PromptShields middleware — Azure Content Safety /text:shieldPrompt."""
+"""PromptShields middleware — Azure Content Safety /text:shieldPrompt."""
 from __future__ import annotations
 
 import logging
@@ -36,15 +36,18 @@ class PromptShieldsMiddleware:
             span.set_attribute("guardrail.layer", "prompt_shields")
             try:
                 result = await self._call_api(user_prompt, documents or [])
-                outcome, attack_type = self._evaluate(result)
+                outcome, attack_type, confidence = self._evaluate(result)
                 span.set_attribute("guardrail.outcome", outcome)
                 if attack_type:
                     span.set_attribute("guardrail.attack_type", attack_type)
                 if outcome == "block":
+                    details: dict[str, Any] = {"attack_type": attack_type}
+                    if confidence is not None:
+                        details["confidence"] = confidence
                     raise GuardrailViolation(
                         layer="prompt_shields",
                         reason=f"Prompt injection / jailbreak detected: {attack_type}",
-                        details={"attack_type": attack_type, "raw_result": result},
+                        details=details,
                         severity="critical",
                     )
             except GuardrailViolation:
@@ -80,14 +83,16 @@ class PromptShieldsMiddleware:
             return response.json()
 
     @staticmethod
-    def _evaluate(result: dict[str, Any]) -> tuple[str, str]:
-        """Return (outcome, attack_type). outcome is 'pass' or 'block'."""
+    def _evaluate(result: dict[str, Any]) -> tuple[str, str, float | None]:
+        """Return (outcome, attack_type, confidence)."""
         user_result: dict[str, Any] = result.get("userPromptAnalysis", {})
         attacks: list[dict[str, Any]] = user_result.get("attacksDetected", [])
         if attacks:
-            return "block", attacks[0].get("attackType", "unknown")
+            first_attack = attacks[0]
+            return "block", first_attack.get("attackType", "unknown"), first_attack.get("confidence")
         for doc in result.get("documentsAnalysis", []):
             doc_attacks: list[dict[str, Any]] = doc.get("attacksDetected", [])
             if doc_attacks:
-                return "block", doc_attacks[0].get("attackType", "unknown")
-        return "pass", ""
+                first_attack = doc_attacks[0]
+                return "block", first_attack.get("attackType", "unknown"), first_attack.get("confidence")
+        return "pass", "", None

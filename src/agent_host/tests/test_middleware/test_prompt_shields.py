@@ -67,6 +67,8 @@ async def test_injection_detected_raises():
 
     assert exc_info.value.layer == "prompt_shields"
     assert "PromptInjection" in exc_info.value.reason
+    assert exc_info.value.details == {"attack_type": "PromptInjection", "confidence": 0.99}
+    assert "raw_result" not in exc_info.value.details
 
 
 @pytest.mark.asyncio
@@ -145,3 +147,4 @@ async def test_document_injection_in_grounding_doc():
             await mw.check("Normal prompt", documents=["doc with injection"])
 
     assert exc_info.value.layer == "prompt_shields"
+    assert exc_info.value.details == {"attack_type": "PromptInjection", "confidence": 0.95}

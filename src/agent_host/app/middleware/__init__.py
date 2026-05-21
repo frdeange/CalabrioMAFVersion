@@ -1,4 +1,4 @@
-﻿"""Middleware package for the Agent Host safety stack.
+"""Middleware package for the Agent Host safety stack.
 
 Layer order (request path):
   1. PromptShields    - detect prompt injection / jailbreak before any agent call
@@ -25,7 +25,7 @@ def build_middleware_chain(
     prompt_shields_fail_mode: str = "closed",
     pii_action: str = "log",
     hmac_secret: str = "",
-    sql_allowed_views: list[str] | None = None,
+    sql_allowed_views: list[str] | str | None = None,
 ) -> dict[str, object]:
     """Instantiate and return all middleware layers keyed by name."""
     chain: dict[str, object] = {}
@@ -38,7 +38,8 @@ def build_middleware_chain(
     chain["pii"] = PIIDetectorMiddleware(action=pii_action)
     if hmac_secret:
         chain["hmac"] = HMACSigner(secret=hmac_secret)
-    chain["sql"] = SQLValidator(allowed_views=sql_allowed_views)
+    views = [v.strip() for v in sql_allowed_views.split(",") if v.strip()] if isinstance(sql_allowed_views, str) else sql_allowed_views
+    chain["sql"] = SQLValidator(allowed_views=views)
     return chain
 
 
