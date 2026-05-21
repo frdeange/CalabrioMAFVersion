@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T21:06:37.593+02:00: Local Docker Azure auth should reuse host Azure CLI cache
+- For local Docker workflows, both `agent-host` and `mcp-wfm` must mount `${USERPROFILE}/.azure` into `/root/.azure` read-only so `DefaultAzureCredential` can resolve `AzureCliCredential`.
+- Keep service-principal variables optional (`AZURE_CLIENT_ID`/`AZURE_CLIENT_SECRET`) because local auth now relies on `az login`, while ACA production still uses managed identity automatically via the same credential chain.
+- Local onboarding docs should explicitly require `az login` before `docker compose up` to avoid silent credential failures.
+
 ### 2026-05-21T20:59:26.105+02:00: APIM CORS preflight must bypass auth
 - APIM operation policies that enforce JWT on secured endpoints must short-circuit `OPTIONS` in `<inbound>` with `<return-response>` before `<validate-jwt>`.
 - Preflight responses should reflect `Origin` and return `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Credentials`, and `Access-Control-Max-Age` to unblock browser CORS.
