@@ -162,3 +162,7 @@ Three critical architecture directives:
 3. **Calabrio UI reference** (11:21Z): Frontend must visually match existing Calabrio Supervisor Assist UI (not generic chatbot).
 
 All directives recorded in `.squad/decisions.md`.
+## 2026-05-21T11:19:14.8425899Z — APIM Policies Complete (PR #33)
+
+Delivered APIM policies XML with JWT validation, claim extraction, rate limiting. Scribe recorded in orchestration log and archived 2 old decisions.
+

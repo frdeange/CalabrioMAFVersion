@@ -1,6 +1,6 @@
 # Decisions Log
 
-**Last updated:** 2026-05-21T11:25:00Z
+**Last updated:** 2026-05-21T13:18:31Z
 
 ---
 
@@ -68,7 +68,8 @@ Reviewer protocol reminder: on any spike-PR rejection, a different agent revises
 
 ---
 
-## 2026-05-19 — Sprint 0 user resolutions (Q1–Q4)
+
+ ## 2026-05-19 — Sprint 0 user resolutions (Q1–Q4)
 
 **By:** Kiko de Ángel (user / product owner); recorded by Morpheus  
 **Resolved:** 2026-05-19T16:33:00Z  
@@ -91,7 +92,8 @@ All 4 ambiguities from the Sprint 0 plan have been resolved by the project lead.
 
 ---
 
-## 2026-05-19 — Security decisions: ADR-001 (PoC AOAI + APIM public-endpoint exception)
+
+ ## 2026-05-19 — Security decisions: ADR-001 (PoC AOAI + APIM public-endpoint exception)
 
 **By:** Oracle (Security / Compliance); Kiko de Ángel + Morpheus (deciders)  
 **Status:** Accepted  
@@ -126,7 +128,8 @@ All 4 ambiguities from the Sprint 0 plan have been resolved by the project lead.
 
 ---
 
-## 2026-05-19 — Transversal decisions: Local dev runtime (Docker Desktop)
+
+ ## 2026-05-19 — Transversal decisions: Local dev runtime (Docker Desktop)
 
 **By:** Kiko de Ángel (user); Coordinator dispatch; Scribe record  
 **Decision:** Docker Desktop + `docker-compose` for **all Python components** of the PoC.
@@ -224,7 +227,8 @@ Azure SQL (remote Azure endpoint)
 
 ---
 
-## 2026-05-19 — DevOps Bootstrap Detail
+
+ ## 2026-05-19 — DevOps Bootstrap Detail
 
 **By:** Switch (for Kiko de Ángel)  
 **Date:** 2026-05-19T12:55:46Z  
@@ -246,7 +250,8 @@ PR #1 on `squad/0-devops-foundations` carrying full DevOps bootstrap with review
 
 ---
 
-## 2026-05-19 — Branch Rename: `master` → `main`
+
+ ## 2026-05-19 — Branch Rename: `master` → `main`
 
 **By:** Switch (for Kiko de Ángel)
 
@@ -267,7 +272,8 @@ Modernization and alignment with GitHub's post-2020 default branch convention.
 
 ---
 
-## 2026-05-19 — PR #1 Copilot Review Round 2 Resolution
+
+ ## 2026-05-19 — PR #1 Copilot Review Round 2 Resolution
 
 **By:** Switch (for Kiko de Ángel)
 
@@ -279,7 +285,8 @@ Modernization and alignment with GitHub's post-2020 default branch convention.
 
 ---
 
-## 2026-05-19 — PR #1 Copilot Review Round 3 Resolution
+
+ ## 2026-05-19 — PR #1 Copilot Review Round 3 Resolution
 
 **By:** Switch (for Kiko de Ángel)  
 **When:** 2026-05-19T20:04:40Z–20:04:41Z
@@ -294,7 +301,8 @@ Modernization and alignment with GitHub's post-2020 default branch convention.
 
 ---
 
-## 2026-05-20 — Sprint 1 Foundry Agent Provisioning + Workflow Skeleton
+
+ ## 2026-05-20 — Sprint 1 Foundry Agent Provisioning + Workflow Skeleton
 
 **By:** Mouse  
 **Requested by:** Kiko de Ángel  
@@ -321,7 +329,8 @@ MAF cannot CRUD Foundry agents, so Sprint 1 needs separate provisioning. Skeleto
 
 ---
 
-## 2026-05-20 — MAF Workflow Design: Dynamic Metadata + Three Specialized Agents
+
+ ## 2026-05-20 — MAF Workflow Design: Dynamic Metadata + Three Specialized Agents
 
 **By:** Mouse  
 **Date:** 2026-05-20T18:13:00Z
@@ -356,7 +365,8 @@ Preserves q14 (metadata-first) and minimum-privilege decision (§2.1):
 
 ---
 
-## 2026-05-20 — Sprint 1 WFM Database Baseline (Azure SQL)
+
+ ## 2026-05-20 — Sprint 1 WFM Database Baseline (Azure SQL)
 
 **By:** Tank  
 **Requested by:** Kiko de Ángel  
@@ -383,7 +393,8 @@ Establishes minimum secure, queryable WFM data platform for MCP SQL Executor and
 
 ---
 
-## 2026-05-20 — Sprint 1 Query Validation Pack (Apoc)
+
+ ## 2026-05-20 — Sprint 1 Query Validation Pack (Apoc)
 
 **By:** Apoc  
 **Recorded:** 2026-05-20T18:13:00Z  
@@ -413,7 +424,8 @@ Adopt `tests/query-validation/` as canonical Sprint 1 acceptance pack for dynami
 
 ---
 
-## 2026-05-20 — Apoc Sprint 1 Batch 2 test strategy
+
+ ## 2026-05-20 — Apoc Sprint 1 Batch 2 test strategy
 
 **By:** Apoc  
 **Recorded:** 2026-05-20T23:53:36Z  
@@ -438,7 +450,8 @@ Mouse and Tank are delivering production code in parallel. QA needs immediate re
 
 ---
 
-## 2026-05-20 — Tank Agent Host wiring (Sprint 1 Batch 2)
+
+ ## 2026-05-20 — Tank Agent Host wiring (Sprint 1 Batch 2)
 
 **By:** Tank  
 **Recorded:** 2026-05-20  
@@ -482,7 +495,8 @@ Implement a lightweight Foundry SDK wrapper in Agent Host and wire `/chat` to th
 
 ---
 
-## 2026-05-21 — Tank SSE `/chat` endpoint negotiation
+
+ ## 2026-05-21 — Tank SSE `/chat` endpoint negotiation
 
 **By:** Tank  
 **Recorded:** 2026-05-21  
@@ -519,7 +533,8 @@ Implemented SSE streaming on `POST /chat` using HTTP `Accept` header negotiation
 
 ---
 
-## 2026-05-21 — Trinity Angular frontend scaffold (Issue #23)
+
+ ## 2026-05-21 — Trinity Angular frontend scaffold (Issue #23)
 
 **By:** Trinity  
 **Recorded:** 2026-05-21  
@@ -544,7 +559,8 @@ This keeps frontend contracts explicit for the backend workflow events, enforces
 
 ---
 
-## 2026-05-21 — User directives: ACA infra, APIM routing, Calabrio UI reference
+
+ ## 2026-05-21 — User directives: ACA infra, APIM routing, Calabrio UI reference
 
 **By:** Kiko de Ángel (via Copilot); recorded by Scribe  
 **Recorded:** 2026-05-21T11:15–11:21:00Z
@@ -580,3 +596,232 @@ This keeps frontend contracts explicit for the backend workflow events, enforces
 - Overall: clean, professional, minimal — NOT a generic chatbot UI
 
 **Why:** User request — the PoC should look like a real Calabrio product, not a prototype.
+
+# Apoc — Sprint 1 Batch 2 test strategy
+
+- **Recorded:** 2026-05-20T23:53:36Z
+- **Agent:** Apoc
+- **Scope:** `src/agent_host/tests/` and `tests/query-validation/`
+
+## What
+Adopted a **contract-first QA strategy** for Batch 2:
+- Added schema, Foundry client, workflow, and `/chat` endpoint test scaffolding that runs even when implementation modules are not merged yet.
+- Added explicit `@pytest.mark.integration` smoke tests for real implementation modules (`app.workflow`, `app.foundry_client`, and real `app.main` chat endpoint), skipped when unavailable.
+- Added `tests/query-validation/test_query_kpis.py` to validate 22 canonical/adversarial query contracts with `sqlglot`, BU-filter checks, and analytics table whitelist patterns.
+
+## Why
+Mouse and Tank are delivering production code in parallel. QA needs immediate regression signal without blocking on merge order, while still preserving future integration gates.
+
+## Consequences
+- Test scaffolding can run now on `develop` with no Foundry/Azure runtime dependencies.
+- Once implementation lands, integration markers provide direct hooks for turning on full contract verification.
+- Query KPI validation is now executable and versioned as a repeatable guardrail suite.
+
+
+### 2026-05-21T11:37:00Z: User directive — Separate ACA for frontend
+**By:** Kiko de Ángel (via Copilot)
+**What:** A new Container App `calabriomafpoc-acafrontend` has been created for the Angular frontend. The backend MAF orchestrator runs on the original ACA. Two separate Container Apps in the same Container Environment.
+**Why:** User request — captured for team memory. Frontend and backend deployed independently.
+
+
+### 2026-05-21T12:23:00Z: Architecture decision — Multi-tenant Entra ID
+**By:** Kiko de Ángel (via Copilot)
+**What:** The Entra ID App Registration must be multi-tenant (any organizational directory), not single-tenant. This enables users from different tenants to log in, demonstrating that the BU filter works per user/organization. Authority URL uses /common instead of /{tenantId}.
+**Why:** PoC needs to show that different organizations see different data based on their identity claims (oid, tid → bu_id mapping).
+
+
+### 2026-05-21T12:32:00Z: Entra ID App Registration complete
+**By:** Kiko de Ángel (via Copilot)
+**What:** App registration created in Entra ID:
+- App Name: calabriomafpoc-supervisor-assist
+- Client ID: 9dfbf018-d41b-4579-8b6c-e58d1a9a52be
+- Tenant ID: 562029ef-9022-45a6-b255-40cd71ebb2ce
+- Multi-tenant (any organizational directory)
+- Application ID URI: api://9dfbf018-d41b-4579-8b6c-e58d1a9a52be
+- Scope: access_as_user (admins and users consent)
+- Authority: https://login.microsoftonline.com/common
+- Redirect URIs: http://localhost:4200, http://localhost:8080
+- SPA with PKCE (no client secret)
+**Why:** Required for MSAL.js auth in frontend and JWT validation in APIM.
+
+
+# Decision: Safety Middleware Stack for Agent Host
+
+**Date:** 2026-05-21T12:52:42+02:00  
+**Author:** Mouse (MAF Orchestrator Expert)  
+**Issue:** #30  
+**PR:** #34  
+**Branch:** feature/sprint2-safety-middleware  
+
+## Context
+
+The Agent Host routes user natural-language queries through three Foundry agents (Intent ? SqlBuilder ? Executor). Without guardrails, a malicious user could inject prompts, leak PII, tamper with the SqlPlan between agents, or bypass SQL access controls.
+
+## Decision
+
+Implement a 4-layer defense-in-depth middleware stack in `app/middleware/`. Each layer is an independent, testable Python class with a standardized OTel span.
+
+### Layer order (request path)
+
+`
+user input
+  ? PromptShieldsMiddleware.check()      # Azure Content Safety, fail-closed
+  ? PIIDetectorMiddleware.process()      # Presidio + regex, log/redact/block
+  ? [Intent Agent call]
+  ? [SqlBuilder Agent call]
+  ? SQLValidator.validate_and_patch()    # sqlglot SELECT-only + analytics allowlist
+  ? HMACSigner.sign()                    # Sign SqlPlan before Executor
+  ? [Executor Agent call after verify]
+  ? HMACSigner.verify_or_raise()         # Reject tampered plans
+`
+
+### Rejected alternatives
+
+- **Hosted MCP middleware**: Not chosen � Local MCP gives us full middleware control inside the Agent Host Python process, enabling `FunctionMiddleware` and `ContextVar` propagation (see 2026-05-19 decision).
+- **Single monolithic guardrail**: Not chosen � independent layers allow per-layer enable/disable via config and isolate failures.
+- **Azure Content Safety for PII**: Not chosen as primary � Presidio runs locally without API latency; Azure CS is the fallback.
+
+## Consequences
+
+- Middleware is **not yet wired** into `workflow.py` � wiring happens next sprint.
+- `GuardrailViolation` raised by any layer will propagate as a 422/403 to the API caller (wiring sprint decides HTTP mapping).
+- `SQL_ALLOWED_VIEWS` must be kept in sync with Tank's view catalog � misconfiguration blocks all queries.
+- Presidio SSN detection requires full spaCy model in production; regex fallback covers test environments.
+- HMAC_SECRET rotation requires a coordinated deploy (both sign and verify use the same key).
+
+## Test evidence
+
+45 tests passing � `python -m pytest tests/test_middleware/ -v` (2026-05-21).
+
+# 2026-05-21T12:52:42+02:00 — DevTunnel setup automation and local E2E guide
+
+**By:** Switch  
+**Requested by:** Kiko de Ángel  
+**Branch:** `feature/sprint2-devtunnel-guide`
+
+## Decision
+
+Introduce a standard DevTunnel workflow for local E2E development behind APIM by adding:
+
+1. A one-time setup script to create/reuse a persistent anonymous tunnel and port forwarding on `8000`.
+2. A daily startup script to host the existing tunnel once local Docker services are running.
+3. A local development guide documenting prerequisites, APIM named value wiring, daily workflow, environment switching, troubleshooting, and architecture.
+
+## Why
+
+- Keeps APIM as the single ingress and policy enforcement point (JWT, claims, CORS, rate limiting) while enabling local backend iteration.
+- Reduces onboarding/ops friction by replacing manual CLI repetition with scripts.
+- Makes local/cloud backend switching explicit through APIM Named Value `backend-url`.
+
+## Implemented artifacts
+
+- `scripts/devtunnel-setup.ps1`
+- `scripts/devtunnel-start.ps1`
+- `docs/local-dev-guide.md`
+- `.env.example` (DevTunnel variables)
+
+
+# 2026-05-21 — APIM policy strategy for Sprint 2 Issue #29
+
+**By:** Tank  
+**Requested by:** Kiko de Ángel  
+**Scope:** `src/apim`
+
+## Decision
+
+Split APIM operation policies into two versioned XML artifacts:
+
+1. `chat-api.xml` for `POST /chat` with security and traffic controls
+2. `health-api.xml` for `GET /health` and `GET /ready` passthrough checks
+
+Both use the APIM Named Value `{{backend-url}}` for backend target routing.
+
+## Why
+
+- `/chat` needs centralized API gateway enforcement (JWT validation, claim propagation, throttling) before backend execution.
+- Health/readiness probes should remain lightweight and unauthenticated for platform diagnostics.
+- Named Value routing allows instant DevTunnel ↔ ACA switching without policy rewrites.
+
+## Applied details
+
+- Entra validation uses multi-tenant OpenID metadata (`/common/v2.0/.well-known/openid-configuration`) with audience `api://9dfbf018-d41b-4579-8b6c-e58d1a9a52be`.
+- User claims (`oid`, `tid`, `name`, `preferred_username`) are mapped to `x-user-*` headers for downstream context.
+- Rate limiting set to `60` calls per `60` seconds keyed by `oid`.
+- HMAC signing is documented as TODO pending Key Vault secret wiring.
+
+
+# 2026-05-21 — Local Docker E2E stack (agent-host + mcp-wfm + frontend)
+
+**By:** Tank  
+**Requested by:** Kiko de Ángel  
+**Branch:** `feature/sprint2-docker-local`
+
+## Decision
+
+Adopt a local Docker Compose topology with three services:
+
+1. `agent-host` (FastAPI orchestrator, port `8000`)
+2. `mcp-wfm` (FastAPI MCP server + ODBC driver 18, port `8001`)
+3. `frontend` (Angular production build served by nginx, exposed on `8080`)
+
+The frontend proxies `/api/*` traffic to `http://agent-host:8000`, and the orchestrator reaches MCP WFM at `http://mcp-wfm:8001/mcp` over the compose network.
+
+## Why
+
+- Enables `docker compose up` for local end-to-end workflows with cloud-backed Azure dependencies (Foundry, SQL, Key Vault).
+- Keeps inter-service addresses stable through compose service names.
+- Adds an explicit env template for local execution and optional service-principal auth inside containers.
+
+## Implemented artifacts
+
+- `src/agent_host/Dockerfile`
+- `src/mcp_wfm/Dockerfile` (with `msodbcsql18`)
+- `src/frontend/Dockerfile`
+- `src/frontend/nginx.conf`
+- `docker-compose.yml`
+- `.env.example`
+- `.dockerignore` files under each service directory
+
+
+# Tank decision inbox — Agent Host wiring (Sprint 1 Batch 2)
+
+**Date:** 2026-05-20  
+**Author:** Tank  
+**Scope:** `src/agent_host`
+
+## Decision
+
+Implement a lightweight Foundry SDK wrapper in Agent Host and wire `/chat` to the workflow integration seam with defensive lazy-loading.
+
+## Why
+
+- The host needs a stable, testable abstraction over Foundry conversations/responses before full workflow orchestration lands.
+- Mouse-owned `workflow.py` is not guaranteed to exist on this branch, so runtime-safe lazy import/error fallback is required to keep the host bootable.
+- Sprint 1 requires `/chat` response fields (`intent`, `sql`, `answer`, `conversation_id`, timing) to support the 3-agent pipeline contract.
+
+## Applied changes
+
+1. Added runtime dependencies for Foundry + identity + MCP HTTP + YAML prompt loading in `src/agent_host/pyproject.toml`.
+2. Extended `Settings` with:
+   - `model_deployment`
+   - `mcp_wfm_url`
+   - `intent_agent_name`
+   - `sql_builder_agent_name`
+   - `query_executor_agent_name`
+   - `default_bu_id`
+3. Added `FoundryClientManager` singleton wrapper in `app/foundry_client.py`:
+   - lazy init of `AIProjectClient` and OpenAI client
+   - timeout-wrapped calls
+   - `create_conversation`, `chat`, `chat_structured`, `health_check`
+   - structured error logging
+4. Updated `app/main.py`:
+   - defensive workflow import seam with TODO note for Mouse merge timing
+   - `/ready` now includes Foundry connectivity probe
+   - `/chat` now accepts `bu_id` + `conversation_id`, builds session context, executes workflow, and returns enriched payload
+5. Updated `app/models.py` request/response schemas for workflow payload shape.
+
+## Consequences
+
+- Agent Host now has an operational Foundry plumbing baseline without coupling to unfinished workflow code.
+- Once Mouse’s workflow implementation is merged, only adapter-level alignment may be needed (class name and output shape).
+

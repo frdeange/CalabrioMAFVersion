@@ -78,3 +78,7 @@ Rubber-duck (via Coordinator) caught a blind spot: the original plan would have 
 - Added reusable DevTunnel automation scripts for persistent tunnel creation and daily host startup (`scripts/devtunnel-setup.ps1`, `scripts/devtunnel-start.ps1`).
 - Standardized local E2E runbook covering APIM named value switching (`backend-url`) between DevTunnel (local) and ACA (cloud).
 - Captured explicit APIM-first architecture for local dev (`Frontend → APIM → DevTunnel → local Docker backend → Docker MCP → Azure SQL`) to keep auth/CORS/JWT enforcement centralized.
+## 2026-05-21T11:19:14.8425899Z � DevTunnel Setup Complete (PR #32)
+
+Delivered DevTunnel setup scripts with auto-generated IDs, local dev guide, fixed custom name issue. Scribe recorded in orchestration log.
+
