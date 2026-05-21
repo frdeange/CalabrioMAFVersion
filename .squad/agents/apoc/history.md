@@ -45,6 +45,10 @@ Earlier entry above ("All team PRs now follow Conventional Commits + branch prot
 - For dynamic schema discovery, **BU/team scoping is a hard pass/fail rule**, not a nice-to-have optimization. A correct-looking answer without supervisor scope is still a failed test.
 - The most meaningful PoC KPI is **input-token compression under controlled schema calls** (warm `listTables`, then 1-3 `getSchema` calls), because output size stays roughly comparable to the Calabrio baseline.
 
+### 2026-05-20: Workflow test scaffolding strategy
+- Contract-first scaffolding works best for fast-moving app layers: fallback schema/workflow/client stubs keep tests executable before implementation lands, while preserving target behavior in assertions.
+- Integration-specific tests should be explicitly tagged (`@pytest.mark.integration`) and skip when implementation modules are absent, so baseline suites remain green during staggered merges.
+- Query validation checks are more robust when we parse canonicalized SQL with `sqlglot` and enforce BU + analytics view whitelisting at the test-contract level.
 ## Team Update — 2026-05-21T000500Z
 
 **Sprint 1 Batch 2 Complete:** Mouse, Tank, Apoc coordination checkpoint.
