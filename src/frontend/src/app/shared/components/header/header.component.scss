@@ -1,0 +1,90 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header__left {
+  display: flex;
+  align-items: center;
+}
+
+.header__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__title h1 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--app-text);
+}
+
+.header__icon {
+  font-size: 20px;
+  color: var(--calabrio-blue);
+}
+
+.header__info {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+}
+
+.header__info:hover {
+  color: var(--calabrio-blue);
+}
+
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header__agent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__agent-label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.header__agent-select {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--app-text);
+  cursor: pointer;
+}
+
+.header__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__details {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--calabrio-blue);
+  cursor: pointer;
+}
+
+.header__details:hover {
+  text-decoration: underline;
+}

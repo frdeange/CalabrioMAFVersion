@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Generator, TypeVar
+from typing import Any, TypeVar
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -18,8 +18,6 @@ from app.schemas import (
     IntentType,
     QueryResult,
     SqlPlan,
-    WorkflowEvent,
-    WorkflowEventType,
     WorkflowResponse,
     WorkflowStatus,
 )
@@ -122,134 +120,6 @@ class WFMWorkflow:
                 message="I couldn't retrieve data right now.",
                 intent=session.get("last_intent") or fallback_intent,
                 error=str(exc),
-            )
-
-    def run_streaming(
-        self,
-        message: str,
-        bu_id: str,
-        session_context: dict[str, Any] | None,
-    ) -> Generator[WorkflowEvent, None, None]:
-        if not message or not message.strip():
-            raise ValueError("message is required")
-        if not bu_id or not bu_id.strip():
-            raise ValueError("bu_id is required")
-
-        session = session_context if session_context is not None else {}
-        current_executor = "workflow"
-        try:
-            current_executor = "intent-classifier"
-            intent = self._run_intent(message=message, session_context=session)
-            yield self._build_event(
-                event=WorkflowEventType.INTENT_RESOLVED,
-                executor=current_executor,
-                data={
-                    "intent": intent.model_dump(mode="json"),
-                    "cache_available": bool(session.get(CATALOG_CACHE_KEY)),
-                },
-            )
-
-            if intent.intent in {IntentType.CONVERSATIONAL, IntentType.OUT_OF_SCOPE}:
-                reply = self._compose_non_data_reply(intent)
-                response = WorkflowResponse(
-                    status=WorkflowStatus.COMPLETED,
-                    message=reply,
-                    intent=intent,
-                )
-                yield self._build_event(
-                    event=WorkflowEventType.RESULT,
-                    executor="workflow",
-                    data={"response": response.model_dump(mode="json")},
-                )
-                yield self._build_event(
-                    event=WorkflowEventType.DONE,
-                    executor="workflow",
-                    data={"status": response.status.value},
-                )
-                return
-
-            current_executor = "sql-builder"
-            yield self._build_event(
-                event=WorkflowEventType.SQL_BUILDING,
-                executor=current_executor,
-                data={
-                    "candidate_tables": intent.candidate_tables,
-                    "bu_id": bu_id,
-                },
-            )
-            sql_plan = self._run_sql_builder(message=message, bu_id=bu_id, intent_result=intent)
-            yield self._build_event(
-                event=WorkflowEventType.SQL_READY,
-                executor=current_executor,
-                data={"sql_plan": sql_plan.model_dump(mode="json")},
-            )
-            if sql_plan.error or not sql_plan.sql.strip():
-                response = WorkflowResponse(
-                    status=WorkflowStatus.ERROR,
-                    message="I could not confirm enough metadata to answer that safely.",
-                    intent=intent,
-                    sql_plan=sql_plan,
-                    error=sql_plan.error or "Unable to produce safe SQL from available metadata.",
-                )
-                yield self._build_event(
-                    event=WorkflowEventType.ERROR,
-                    executor=current_executor,
-                    data={"response": response.model_dump(mode="json")},
-                )
-                return
-
-            current_executor = "query-executor"
-            yield self._build_event(
-                event=WorkflowEventType.EXECUTING,
-                executor=current_executor,
-                data={
-                    "sql": sql_plan.sql,
-                    "tables_used": sql_plan.tables_used,
-                },
-            )
-            execution_result = self._execute_query(sql_plan.sql)
-            query_result = self._run_executor(
-                language_hint=intent.language_hint,
-                sql_plan=sql_plan,
-                execution_result=execution_result,
-            )
-            response = WorkflowResponse(
-                status=WorkflowStatus.COMPLETED,
-                message=query_result.answer,
-                intent=intent,
-                sql_plan=sql_plan,
-                query_result=query_result,
-            )
-            yield self._build_event(
-                event=WorkflowEventType.RESULT,
-                executor=current_executor,
-                data={
-                    "response": response.model_dump(mode="json"),
-                    "execution_result": execution_result.model_dump(mode="json"),
-                },
-            )
-            yield self._build_event(
-                event=WorkflowEventType.DONE,
-                executor="workflow",
-                data={"status": response.status.value},
-            )
-        except WorkflowExecutionError as exc:
-            fallback_intent = IntentResult(
-                intent=IntentType.DATA_QUERY,
-                candidate_tables=[],
-                language_hint=session.get("language_hint", "en"),
-                cache_action="bypass",
-            )
-            response = WorkflowResponse(
-                status=WorkflowStatus.ERROR,
-                message="I couldn't retrieve data right now.",
-                intent=session.get("last_intent") or fallback_intent,
-                error=str(exc),
-            )
-            yield self._build_event(
-                event=WorkflowEventType.ERROR,
-                executor=current_executor,
-                data={"response": response.model_dump(mode="json")},
             )
 
     def _build_project_client(self) -> Any:
@@ -623,19 +493,6 @@ class WFMWorkflow:
         if isinstance(value, list):
             return [self._to_jsonable(item) for item in value]
         return value
-
-    def _build_event(
-        self,
-        event: WorkflowEventType,
-        executor: str,
-        data: dict[str, Any] | None = None,
-    ) -> WorkflowEvent:
-        return WorkflowEvent(
-            event=event,
-            executor=executor,
-            data=self._to_jsonable(data or {}),
-            timestamp=datetime.now(timezone.utc).isoformat(),
-        )
 
     def _compose_non_data_reply(self, intent: IntentResult) -> str:
         language = intent.language_hint.lower()

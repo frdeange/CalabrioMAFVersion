@@ -107,3 +107,53 @@ Status: All agents delivered on scope.
 - Agent Host now includes a Foundry SDK manager (`FoundryClientManager`) with lazy client initialization, timeout-wrapped calls, structured logging, and health checks.
 - `/chat` now accepts `bu_id` and `conversation_id`, creates a Foundry conversation when absent, and forwards `message + bu_id + session_context` into the workflow integration point.
 - `/ready` now verifies both Foundry endpoint configuration and live connectivity, while request/response models include intent/sql/answer payload fields for workflow outputs.
+
+## Team Update — 2026-05-21T11:25:00Z
+
+**Sprint 2 Batch 1:** Real-time streaming architecture delivery.
+
+### Tank Work (PR #25)
+
+**Issue:** #25 — SSE endpoint with Accept-header negotiation  
+**Branch:** feature/sprint2-sse-endpoint  
+**Status:** 47 tests pass, 2 xfailed
+
+**Delivered:**
+- Implemented SSE streaming on `POST /chat` with HTTP `Accept` header negotiation:
+  - `Accept: text/event-stream` → `StreamingResponse` (text/event-stream)
+  - Any other Accept value → existing JSON `ChatResponse` (backward compatible)
+- Added `_stream_chat()` async generator in `app/main.py`:
+  - Resolves workflow and conversation id via `asyncio.to_thread(...)`
+  - Calls blocking `workflow.run_streaming(message, bu_id, session_context)` via thread offloading
+  - Iterates events safely and emits `data: {json}\n\n`
+  - Stops on client disconnect
+  - Emits terminal SSE error event on workflow failure
+- Added `WorkflowEventResponse` API model in `app/models.py` for SSE payload shape
+- Configured CORS middleware for Angular dev origins (`http://localhost:4200`, `http://127.0.0.1:4200`) and exposed SSE-related headers
+- Added endpoint tests in `tests/test_sse_endpoint.py`:
+  - SSE happy-path stream payloads
+  - Accept negotiation (SSE vs JSON)
+  - SSE error event when streaming workflow fails
+  - Backward-compatible JSON behavior
+
+**Integration points:**
+- Consumes Mouse's `WorkflowEvent` schema and `run_streaming()` generator (PR #26)
+- Provides SSE transport for Trinity's Angular chat service (PR #27)
+- Maintains backward-compatible JSON response for non-SSE clients
+
+**Implementation notes:**
+- No external SSE library required (raw FastAPI `StreamingResponse` sufficient)
+- Temporary fallback for `WorkflowEvent` import until Mouse's streaming schema merge lands
+- Thread-safe workflow execution allows blocking MAF workflow to integrate with FastAPI async
+
+### User Directives Captured
+
+**Time:** 2026-05-21T11:15–11:21Z  
+**Source:** Kiko de Ángel
+
+Three critical architecture directives:
+1. **ACA infra ready** (11:15Z): Container Registry (calabriomafpocacr), Container Environment, and Container App exist in rg-Calabriomafpoc. Running dummy image; ready for agent host Dockerfile deployment.
+2. **Frontend → APIM routing** (11:16Z): Frontend NEVER talks directly to backend. All traffic through APIM (calabriomafpoc-apim). APIM handles JWT validation, claim extraction, header injection, HMAC signing, rate limiting.
+3. **Calabrio UI reference** (11:21Z): Frontend must visually match existing Calabrio Supervisor Assist UI (not generic chatbot).
+
+All directives recorded in `.squad/decisions.md`.

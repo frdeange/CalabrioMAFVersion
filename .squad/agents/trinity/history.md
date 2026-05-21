@@ -37,3 +37,52 @@
 ### 2026-05-19: Coordinator clarification (post-rename)
 
 Earlier entry above ("All team PRs now follow Conventional Commits + branch protection on `master` and `develop`") was written before the same-day rename. Current state: branch protection on `main` + `develop`. See `switch/history.md` section "Default branch rename master → main" for the rename evidence.
+
+## Team Update — 2026-05-21T11:25:00Z
+
+**Sprint 2 Batch 1:** Real-time streaming architecture delivery.
+
+### Trinity Work (PR #27)
+
+**Issue:** #27 — Angular 19 scaffold with MSAL, SSE chat service, per-executor progress  
+**Status:** In progress
+
+**Delivered:**
+- Scaffolded Angular 19 standalone application at `src/frontend`
+- Implemented MSAL-based authentication:
+  - `msal.config.ts` for Entra ID configuration
+  - `auth.guard.ts` for route protection
+  - `auth.interceptor.ts` for JWT token injection
+- Created typed chat models and SSE streaming service:
+  - Typed `WorkflowEvent` model matching Mouse's backend schema
+  - `ChatService` with SSE `EventSource` integration
+  - Per-executor progress tracking (Intent → SQL → Executing → Result)
+- Built chat UI components:
+  - Chat container with message history
+  - Per-executor progress indicators (animated dots, not generic spinner)
+  - Data table rendering for query results
+  - Guardrail rejection display with layer + reason
+- Added mobile-first responsive styles with light/dark theme variables
+- Configured environment files and production file replacement
+
+**Integration points:**
+- Consumes Tank's SSE `/chat` endpoint (PR #25) via typed `ChatService`
+- Receives Mouse's `WorkflowEvent` schema (PR #26) for per-executor progress UI
+- Routes all API traffic through APIM (per user directive — never direct to backend)
+- UI design matches Calabrio Supervisor Assist reference (per user directive)
+
+**Design compliance:**
+- Dark left sidebar with Calabrio branding (red logo)
+- Clean white chat area with centered empty state greeting
+- User messages right-aligned (light purple), assistant left-aligned (light gray)
+- Inline data tables with blue header row (Calabrio brand blue)
+- Bottom input bar with "Type your message..." placeholder and blue send button
+- AI disclaimer footer: "Supervisor assist is a generative AI-based solution and may make mistakes"
+- Animated progress dots during execution (no generic spinner)
+- Mobile-first, responsive, professional appearance (not prototype UI)
+
+**Architecture notes:**
+- MSAL configuration requires environment-specific tenant ID and client ID values
+- JWT flows through APIM for validation and claim extraction before reaching backend
+- SSE service handles connection state, reconnection, and error events
+- TypeScript strict mode enforced throughout

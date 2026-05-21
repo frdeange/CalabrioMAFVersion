@@ -101,3 +101,44 @@ Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
 - Mouse: Wire native MAF `WorkflowBuilder` + `MCPStreamableHTTPTool` to replace pre-MAF skeleton (depends on `agent-framework>=1.0` landing in `pyproject.toml`).
 - Tank: Add Dockerfile + docker-compose orchestration (dep on Switch's container-build CI gate).
 - Apoc: Expand adversarial corpus and profile query performance under load.
+
+## Team Update — 2026-05-21T11:25:00Z
+
+**Sprint 2 Batch 1:** Real-time streaming architecture delivery.
+
+### Mouse Work (PR #26)
+
+**Issue:** #26 — WorkflowEvent schema + run_streaming() generator  
+**Status:** 48 tests pass, 2 xfailed
+
+**Delivered:**
+- Implemented `WorkflowEvent` schema with per-executor event types:
+  - `intent_start`, `intent_done` (Intent classifier execution)
+  - `sql_start`, `sql_done` (SQL builder execution)
+  - `executing_start`, `executing_done` (Query executor execution)
+  - `workflow_complete` (successful workflow completion)
+  - `workflow_error` (workflow failure with error details)
+- Added `workflow.run_streaming()` generator method for SSE backend support
+- Updated workflow orchestration to emit events at each executor boundary
+- Added streaming workflow test coverage
+
+**Integration points:**
+- Schema referenced by Tank's SSE endpoint implementation (PR #25)
+- Streaming generator consumed by Tank's `_stream_chat()` async wrapper
+- Event model consumed by Trinity's Angular SSE chat service (PR #27)
+
+**Design notes:**
+- Events designed for direct Angular SSE consumption with per-executor status tracking
+- Generator pattern allows blocking workflow to integrate cleanly with FastAPI async streaming
+- Event types map 1:1 to UI progress states (Intent → SQL → Executing → Result)
+
+### Foundry Agents Provisioned
+
+**Completed:** Prior to Sprint 2 Batch 1
+
+Coordinator provisioned 3 Foundry agents:
+- `wfm-intent-classifier` (gpt-5.2, v1)
+- `wfm-sql-builder` (gpt-5.2, v1)
+- `wfm-query-executor` (gpt-5.2, v1)
+
+Issue #21 closed.

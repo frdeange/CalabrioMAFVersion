@@ -1,0 +1,37 @@
+﻿<section class="chat" aria-label="Supervisor chat">
+  <!-- Empty State (when no messages) -->
+  <div class="chat__empty" *ngIf="messages.length === 0">
+    <div class="chat__greeting">
+      <h2 class="chat__greeting-title">Hello, {{ userName }}!</h2>
+      <p class="chat__greeting-subtitle">What can I help you with today?</p>
+    </div>
+  </div>
+
+  <!-- Messages Area (when there are messages) -->
+  <div class="chat__messages" *ngIf="messages.length > 0" #messagesContainer>
+    <app-message *ngFor="let message of messages" [message]="message"></app-message>
+  </div>
+
+  <!-- Input Bar (always visible at bottom) -->
+  <div class="chat__input-container">
+    <form class="chat__composer" (ngSubmit)="sendMessage()">
+      <label class="sr-only" for="chat-message">Message</label>
+      <input
+        id="chat-message"
+        type="text"
+        name="chat-message"
+        [(ngModel)]="draft"
+        placeholder="Type your message..."
+        class="chat__input"
+        (keydown.enter)="$event.preventDefault(); sendMessage()"
+        autocomplete="off"
+      />
+      <button type="submit" class="chat__send-btn" [disabled]="!draft.trim()" aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </form>
+    <p class="chat__disclaimer">Supervisor assist is a generative AI-based solution and may make mistakes</p>
+  </div>
+</section>
