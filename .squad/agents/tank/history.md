@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T15:24:47.327+02:00: DevTunnel/APIM routing invariant for local E2E
+- APIM must target the DevTunnel **port URL** (from `devtunnel show` Ports output), not the friendly tunnel URL.
+- DevTunnel request routing depends on the HTTP `Host` header; APIM operation policies must set `Host` from `{{backend-url}}` dynamically using `@(new System.Uri("{{backend-url}}").Host)`.
+- Keeping backend target in APIM Named Value `backend-url` allows each developer to swap local tunnel endpoints without editing policy XML logic.
+
 ### 2026-05-19: Initial context
 - 3 Managed Identities separadas (§9.2): `mi-agent-host`, `mi-mcp-schema`, `mi-mcp-sqlexec`. Cada una con permisos mínimos.
 - MCP Schema Provider: schemas en Blob, caché en memoria, invalidación por Event Grid. RBAC filtra vistas por rol del usuario (lee `x-user-context`).
@@ -162,7 +167,7 @@ Three critical architecture directives:
 3. **Calabrio UI reference** (11:21Z): Frontend must visually match existing Calabrio Supervisor Assist UI (not generic chatbot).
 
 All directives recorded in `.squad/decisions.md`.
-## 2026-05-21T11:19:14.8425899Z � APIM Policies Complete (PR #33)
+## 2026-05-21T11:19:14.8425899Z � APIM Policies Complete (PR #33)
 
 Delivered APIM policies XML with JWT validation, claim extraction, rate limiting. Scribe recorded in orchestration log and archived 2 old decisions.
 
