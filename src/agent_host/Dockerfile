@@ -1,20 +1,16 @@
 FROM python:3.12-slim
-# Sprint 0: tag pin is acceptable; production images should pin by digest.
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-RUN addgroup --system appgroup && adduser --system --uid 1000 --ingroup appgroup appuser
-
 COPY pyproject.toml ./
-COPY app ./app
+COPY app/ app/
+COPY prompts/ prompts/
 
-RUN pip install --upgrade pip && pip install .
+RUN pip install --no-cache-dir .
 
-USER 1000:1000
+RUN addgroup --system app && adduser --system --ingroup app app
+
+USER app
 
 EXPOSE 8000
 
