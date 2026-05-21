@@ -315,10 +315,14 @@ async def _stream_chat(
         )
     finally:
         stop_event.set()
-        if stream is not None and hasattr(stream, "close"):
-            await asyncio.to_thread(stream.close)
         if producer_thread is not None and producer_thread.is_alive():
             await asyncio.to_thread(producer_thread.join, _STREAM_POLL_SECONDS)
+        if (
+            stream is not None
+            and hasattr(stream, "close")
+            and (producer_thread is None or not producer_thread.is_alive())
+        ):
+            await asyncio.to_thread(stream.close)
 
 
 @app.get("/health")
