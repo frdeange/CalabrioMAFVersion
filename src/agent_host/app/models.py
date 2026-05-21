@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
-    bu_id: str | None = None
+    bu_id: str | None = Field(default=None)
     conversation_id: str | None = None
     correlation_id: str | None = None
 
