@@ -6,6 +6,11 @@ COPY pyproject.toml ./
 COPY app/ app/
 COPY prompts/ prompts/
 
+# Azure CLI for local dev only (DefaultAzureCredential → AzureCliCredential). Not needed in ACA (Managed Identity).
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    curl -sL https://aka.ms/InstallAzureCLIDeb | bash && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir .
 
 RUN addgroup --system app && adduser --system --ingroup app app
