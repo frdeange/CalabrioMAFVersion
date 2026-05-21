@@ -204,6 +204,12 @@ def _build_session_context(
     return session_context
 
 
+def _resolve_bu_id(bu_id: str | None) -> str:
+    if bu_id and bu_id.strip():
+        return bu_id.strip()
+    return settings.default_bu_id
+
+
 def _drain_stream_to_queue(
     stream: Any,
     event_queue: queue.Queue[Any],
@@ -230,7 +236,7 @@ async def _stream_chat(
     stop_event = threading.Event()
     event_queue: queue.Queue[Any] = queue.Queue()
     conversation_id = request.conversation_id
-    bu_id = request.bu_id or settings.default_bu_id
+    bu_id = _resolve_bu_id(request.bu_id)
     try:
         workflow = await asyncio.to_thread(_get_workflow)
         if conversation_id is None:
@@ -392,7 +398,7 @@ async def chat(
         },
     )
 
-    bu_id = request.bu_id or settings.default_bu_id
+    bu_id = _resolve_bu_id(request.bu_id)
     conversation_id = request.conversation_id
     try:
         workflow = await asyncio.to_thread(_get_workflow)
