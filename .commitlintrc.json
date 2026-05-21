@@ -1,13 +1,11 @@
 {
   "rules": {
-    "type-empty": [
-      2,
-      "never"
-    ],
-    "subject-empty": [
-      2,
-      "never"
-    ],
+    "type-empty": [2, "never"],
+    "subject-empty": [2, "never"],
+    "subject-case": [0],
+    "body-leading-blank": [2, "always"],
+    "body-max-line-length": [0],
+    "footer-max-line-length": [0],
     "type-enum": [
       2,
       "always",
