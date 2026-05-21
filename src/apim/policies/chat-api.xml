@@ -1,59 +1,14 @@
-<policies>
+﻿<policies>
   <inbound>
     <base />
-
-    <!-- Validate Entra ID v2.0 access token (multi-tenant via common metadata). -->
-    <validate-jwt
-      header-name="Authorization"
-      failed-validation-httpcode="401"
-      failed-validation-error-message="Unauthorized"
-      require-expiration-time="true"
-      require-signed-tokens="true">
-      <openid-config url="https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration" />
-      <audiences>
-        <audience>api://9dfbf018-d41b-4579-8b6c-e58d1a9a52be</audience>
-      </audiences>
-    </validate-jwt>
-
-    <!-- Inject identity context for downstream services. -->
-    <set-header name="x-user-oid" exists-action="override">
-      <value>@(context.Request.Headers.GetValueOrDefault("Authorization","").AsJwt()?.Claims.GetValueOrDefault("oid",""))</value>
-    </set-header>
-    <set-header name="x-user-tid" exists-action="override">
-      <value>@(context.Request.Headers.GetValueOrDefault("Authorization","").AsJwt()?.Claims.GetValueOrDefault("tid",""))</value>
-    </set-header>
-    <set-header name="x-user-name" exists-action="override">
-      <value>@(context.Request.Headers.GetValueOrDefault("Authorization","").AsJwt()?.Claims.GetValueOrDefault("name",""))</value>
-    </set-header>
-    <set-header name="x-user-email" exists-action="override">
-      <value>@(context.Request.Headers.GetValueOrDefault("Authorization","").AsJwt()?.Claims.GetValueOrDefault("preferred_username",""))</value>
-    </set-header>
-
-    <!-- Per-user throttling (60 calls/minute). -->
-    <rate-limit-by-key
-      calls="60"
-      renewal-period="60"
-      counter-key="@(context.Request.Headers.GetValueOrDefault(&quot;Authorization&quot;,&quot;&quot;).AsJwt()?.Claims.GetValueOrDefault(&quot;oid&quot;, context.Request.IpAddress))" />
-
-    <!-- TODO: Add HMAC signing for x-user-* headers once Key Vault secret wiring is ready. -->
     <set-backend-service base-url="{{backend-url}}" />
   </inbound>
-
   <backend>
     <base />
-    <forward-request timeout="30" />
+    <forward-request timeout="10" />
   </backend>
-
   <outbound>
     <base />
-
-    <!-- Prevent internal identity headers from leaking to clients. -->
-    <set-header name="x-user-oid" exists-action="delete" />
-    <set-header name="x-user-tid" exists-action="delete" />
-    <set-header name="x-user-name" exists-action="delete" />
-    <set-header name="x-user-email" exists-action="delete" />
-
-    <!-- Reflect CORS origin when present. -->
     <choose>
       <when condition="@(context.Request.Headers.ContainsKey(&quot;Origin&quot;))">
         <set-header name="Access-Control-Allow-Origin" exists-action="override">
@@ -62,20 +17,10 @@
         <set-header name="Access-Control-Allow-Credentials" exists-action="override">
           <value>true</value>
         </set-header>
-        <set-header name="Access-Control-Expose-Headers" exists-action="override">
-          <value>Content-Type,Request-Id,traceparent</value>
-        </set-header>
       </when>
     </choose>
   </outbound>
-
   <on-error>
     <base />
-    <set-header name="Content-Type" exists-action="override">
-      <value>application/json</value>
-    </set-header>
-    <set-body>@{
-      return "{""error"":""apim_request_failed"",""message"":""Request could not be processed by API Management.""}";
-    }</set-body>
   </on-error>
 </policies>

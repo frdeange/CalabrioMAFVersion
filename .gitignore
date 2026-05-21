@@ -301,6 +301,7 @@ web_modules/
 .env
 .env.*
 !.env.example
+.devtunnel-id
 
 # Docker local overrides
 docker-compose.override.yml
