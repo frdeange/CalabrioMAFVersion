@@ -7,7 +7,7 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 try:
-    from app.schemas import IntentResult, QueryResult, SqlPlan, WorkflowResponse
+    from app.schemas import IntentResult, QueryResult, SqlPlan, WorkflowEvent, WorkflowEventType, WorkflowResponse
 except (ImportError, ModuleNotFoundError):
     class IntentResult(BaseModel):
         intent: Literal["DataQuery", "Conversational", "OutOfScope"]
@@ -151,3 +151,13 @@ def test_workflow_response_all_status_codes(status: str) -> None:
 
     response = WorkflowResponse(**payload)
     assert getattr(response.status, "value", response.status) == status
+
+
+def test_workflow_event_rejects_non_iso_timestamp() -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(
+            event=WorkflowEventType.DONE,
+            executor="workflow",
+            data={},
+            timestamp="not-a-timestamp",
+        )
