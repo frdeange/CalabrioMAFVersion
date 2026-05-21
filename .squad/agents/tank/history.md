@@ -102,3 +102,8 @@ Plus DevOps + branch rename decisions from Sprint 0 wrap-up (Switch).
 - Apoc: Query validation + KPI targets → PR #17 ✓
 
 Status: All agents delivered on scope.
+
+### 2026-05-20: Agent Host wiring baseline for Sprint 1 Batch 2
+- Agent Host now includes a Foundry SDK manager (`FoundryClientManager`) with lazy client initialization, timeout-wrapped calls, structured logging, and health checks.
+- `/chat` now accepts `bu_id` and `conversation_id`, creates a Foundry conversation when absent, and forwards `message + bu_id + session_context` into the workflow integration point.
+- `/ready` now verifies both Foundry endpoint configuration and live connectivity, while request/response models include intent/sql/answer payload fields for workflow outputs.

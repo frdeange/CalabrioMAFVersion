@@ -3,13 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
 try:
-    from app.foundry_client import FoundryClient as ImportedFoundryClient
+    import app.foundry_client as foundry_module
 except (ImportError, ModuleNotFoundError):
+    foundry_module = None
     ImportedFoundryClient = None
+else:
+    ImportedFoundryClient = getattr(foundry_module, "FoundryClient", None)
 
 
 @dataclass
@@ -97,7 +101,42 @@ def test_health_check_reachable_and_unreachable_endpoints(
     assert client.health_check() is expected
 
 
+@pytest.mark.skipif(foundry_module is None, reason="app.foundry_client not available yet")
+def test_run_with_timeout_cancels_future_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    future = MagicMock()
+    future.result.side_effect = foundry_module.FuturesTimeoutError()
+    future.cancel.return_value = True
+
+    manager = foundry_module.FoundryClientManager("https://foundry.test", timeout_seconds=1)
+    executor = MagicMock()
+    executor.submit.return_value = future
+    monkeypatch.setattr(manager, "_executor", executor)
+
+    with pytest.raises(TimeoutError, match="timed out"):
+        manager._run_with_timeout(lambda: None)
+
+    future.cancel.assert_called_once_with()
+
+
+@pytest.mark.skipif(foundry_module is None, reason="app.foundry_client not available yet")
+def test_close_shuts_down_executor_and_closes_clients(monkeypatch: pytest.MonkeyPatch) -> None:
+    manager = foundry_module.FoundryClientManager("https://foundry.test")
+    executor = MagicMock()
+    project_client = MagicMock()
+    credential = MagicMock()
+
+    monkeypatch.setattr(manager, "_executor", executor)
+    monkeypatch.setattr(manager, "_project_client", project_client)
+    monkeypatch.setattr(manager, "_credential", credential)
+
+    manager.close()
+
+    project_client.close.assert_called_once_with()
+    credential.close.assert_called_once_with()
+    executor.shutdown.assert_called_once_with(wait=False, cancel_futures=True)
+
+
 @pytest.mark.integration
-@pytest.mark.skipif(ImportedFoundryClient is None, reason="app.foundry_client not available yet")
+@pytest.mark.skipif(foundry_module is None, reason="app.foundry_client not available yet")
 def test_real_foundry_client_module_available() -> None:
-    assert ImportedFoundryClient is not None
+    assert foundry_module is not None
