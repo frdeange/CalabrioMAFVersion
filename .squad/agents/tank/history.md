@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T21:15:56.578+02:00: APIM CORS ownership moved to API-level policy
+- Operation-level policies for `/chat`, `/health`, and `/ready` should not implement manual `OPTIONS` preflight responses.
+- CORS response headers must not be reflected in operation outbound policies when APIM built-in API-level CORS is enabled.
+- Keep operation policies focused on auth, routing, throttling, and header hygiene to avoid policy conflicts.
+
 ### 2026-05-21T20:59:26.105+02:00: APIM CORS preflight must bypass auth
 - APIM operation policies that enforce JWT on secured endpoints must short-circuit `OPTIONS` in `<inbound>` with `<return-response>` before `<validate-jwt>`.
 - Preflight responses should reflect `Origin` and return `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Credentials`, and `Access-Control-Max-Age` to unblock browser CORS.
