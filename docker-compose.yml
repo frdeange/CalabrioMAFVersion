@@ -1,67 +1,32 @@
 services:
   agent-host:
-    build:
-      context: .\src\agent_host
-    container_name: agent-host
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    networks:
-      - calabrio-poc-net
+    build: ./src/agent_host
+    ports: ["8000:8000"]
+    env_file: .env
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import socket;s=socket.socket();s.settimeout(2);s.connect(('127.0.0.1',8000));s.close()"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 15s
+    depends_on:
+      mcp-wfm:
+        condition: service_healthy
 
   mcp-wfm:
-    build:
-      context: .\src\mcp_wfm
-    container_name: mcp-wfm
-    env_file:
-      - .env
-    ports:
-      - "8001:8001"
-    networks:
-      - calabrio-poc-net
+    build: ./src/mcp_wfm
+    ports: ["8001:8001"]
+    env_file: .env
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import socket;s=socket.socket();s.settimeout(2);s.connect(('127.0.0.1',8001));s.close()"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 15s
 
-  mcp-forecast:
-    build:
-      context: .\src\mcp_forecast
-    container_name: mcp-forecast
-    env_file:
-      - .env
-    ports:
-      - "8002:8002"
-    networks:
-      - calabrio-poc-net
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-
-  # sql-local:
-  #   image: mcr.microsoft.com/azure-sql-edge:latest
-  #   container_name: sql-local
-  #   environment:
-  #     ACCEPT_EULA: "Y"
-  #     MSSQL_SA_PASSWORD: "Your_strong_password123!"
-  #   ports:
-  #     - "1433:1433"
-  #   networks:
-  #     - calabrio-poc-net
-  # Optional for Sprint 0; Kiko uses Azure SQL remote. Uncomment if you want to test against a local SQL container.
-
-networks:
-  calabrio-poc-net:
-    driver: bridge
+  frontend:
+    build: ./src/frontend
+    ports: ["8080:80"]
+    depends_on:
+      agent-host:
+        condition: service_healthy

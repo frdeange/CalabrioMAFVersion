@@ -1,0 +1,5 @@
+.squad/
+__pycache__/
+tests/
+node_modules/
+.git/
