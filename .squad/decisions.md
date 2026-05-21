@@ -1,6 +1,6 @@
 # Decisions Log
 
-**Last updated:** 2026-05-21T13:18:31Z
+**Last updated:** 2026-05-21T15:24:47Z
 
 ---
 
@@ -677,21 +677,21 @@ user input
 
 ### Rejected alternatives
 
-- **Hosted MCP middleware**: Not chosen — Local MCP gives us full middleware control inside the Agent Host Python process, enabling `FunctionMiddleware` and `ContextVar` propagation (see 2026-05-19 decision).
-- **Single monolithic guardrail**: Not chosen — independent layers allow per-layer enable/disable via config and isolate failures.
-- **Azure Content Safety for PII**: Not chosen as primary — Presidio runs locally without API latency; Azure CS is the fallback.
+- **Hosted MCP middleware**: Not chosen ï¿½ Local MCP gives us full middleware control inside the Agent Host Python process, enabling `FunctionMiddleware` and `ContextVar` propagation (see 2026-05-19 decision).
+- **Single monolithic guardrail**: Not chosen ï¿½ independent layers allow per-layer enable/disable via config and isolate failures.
+- **Azure Content Safety for PII**: Not chosen as primary ï¿½ Presidio runs locally without API latency; Azure CS is the fallback.
 
 ## Consequences
 
-- Middleware is **not yet wired** into `workflow.py` — wiring happens next sprint.
+- Middleware is **not yet wired** into `workflow.py` ï¿½ wiring happens next sprint.
 - `GuardrailViolation` raised by any layer will propagate as a 422/403 to the API caller (wiring sprint decides HTTP mapping).
-- `SQL_ALLOWED_VIEWS` must be kept in sync with Tank's view catalog — misconfiguration blocks all queries.
+- `SQL_ALLOWED_VIEWS` must be kept in sync with Tank's view catalog ï¿½ misconfiguration blocks all queries.
 - Presidio SSN detection requires full spaCy model in production; regex fallback covers test environments.
 - HMAC_SECRET rotation requires a coordinated deploy (both sign and verify use the same key).
 
 ## Test evidence
 
-45 tests passing — `python -m pytest tests/test_middleware/ -v` (2026-05-21).
+45 tests passing ï¿½ `python -m pytest tests/test_middleware/ -v` (2026-05-21).
 
 # 2026-05-21T12:52:42+02:00 â€” DevTunnel setup automation and local E2E guide
 
