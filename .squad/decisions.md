@@ -1,6 +1,6 @@
 # Decisions Log
 
-**Last updated:** 2026-05-19T13:38:00Z
+**Last updated:** 2026-05-21T11:25:00Z
 
 ---
 
@@ -410,3 +410,173 @@ Adopt `tests/query-validation/` as canonical Sprint 1 acceptance pack for dynami
 - Future workflow runs compared against same KPI targets and rubric.
 - BU-filter compliance is explicit pass/fail per safe business query.
 - Q21/Q22 establish minimum adversarial guardrail smoke test per validation cycle.
+
+---
+
+## 2026-05-20 — Apoc Sprint 1 Batch 2 test strategy
+
+**By:** Apoc  
+**Recorded:** 2026-05-20T23:53:36Z  
+**Scope:** `src/agent_host/tests/` and `tests/query-validation/`
+
+### What
+
+Adopted a **contract-first QA strategy** for Batch 2:
+- Added schema, Foundry client, workflow, and `/chat` endpoint test scaffolding that runs even when implementation modules are not merged yet.
+- Added explicit `@pytest.mark.integration` smoke tests for real implementation modules (`app.workflow`, `app.foundry_client`, and real `app.main` chat endpoint), skipped when unavailable.
+- Added `tests/query-validation/test_query_kpis.py` to validate 22 canonical/adversarial query contracts with `sqlglot`, BU-filter checks, and analytics table whitelist patterns.
+
+### Why
+
+Mouse and Tank are delivering production code in parallel. QA needs immediate regression signal without blocking on merge order, while still preserving future integration gates.
+
+### Consequences
+
+- Test scaffolding can run now on `develop` with no Foundry/Azure runtime dependencies.
+- Once implementation lands, integration markers provide direct hooks for turning on full contract verification.
+- Query KPI validation is now executable and versioned as a repeatable guardrail suite.
+
+---
+
+## 2026-05-20 — Tank Agent Host wiring (Sprint 1 Batch 2)
+
+**By:** Tank  
+**Recorded:** 2026-05-20  
+**Scope:** `src/agent_host`
+
+### Decision
+
+Implement a lightweight Foundry SDK wrapper in Agent Host and wire `/chat` to the workflow integration seam with defensive lazy-loading.
+
+### Why
+
+- The host needs a stable, testable abstraction over Foundry conversations/responses before full workflow orchestration lands.
+- Mouse-owned `workflow.py` is not guaranteed to exist on this branch, so runtime-safe lazy import/error fallback is required to keep the host bootable.
+- Sprint 1 requires `/chat` response fields (`intent`, `sql`, `answer`, `conversation_id`, timing) to support the 3-agent pipeline contract.
+
+### Applied changes
+
+1. Added runtime dependencies for Foundry + identity + MCP HTTP + YAML prompt loading in `src/agent_host/pyproject.toml`.
+2. Extended `Settings` with:
+   - `model_deployment`
+   - `mcp_wfm_url`
+   - `intent_agent_name`
+   - `sql_builder_agent_name`
+   - `query_executor_agent_name`
+   - `default_bu_id`
+3. Added `FoundryClientManager` singleton wrapper in `app/foundry_client.py`:
+   - lazy init of `AIProjectClient` and OpenAI client
+   - timeout-wrapped calls
+   - `create_conversation`, `chat`, `chat_structured`, `health_check`
+   - structured error logging
+4. Updated `app/main.py`:
+   - defensive workflow import seam with TODO note for Mouse merge timing
+   - `/ready` now includes Foundry connectivity probe
+   - `/chat` now accepts `bu_id` + `conversation_id`, builds session context, executes workflow, and returns enriched payload
+5. Updated `app/models.py` request/response schemas for workflow payload shape.
+
+### Consequences
+
+- Agent Host now has an operational Foundry plumbing baseline without coupling to unfinished workflow code.
+- Once Mouse's workflow implementation is merged, only adapter-level alignment may be needed (class name and output shape).
+
+---
+
+## 2026-05-21 — Tank SSE `/chat` endpoint negotiation
+
+**By:** Tank  
+**Recorded:** 2026-05-21  
+**Issue:** #22  
+**Branch:** `feature/sprint2-sse-endpoint`
+
+### Decision
+
+Implemented SSE streaming on `POST /chat` using HTTP `Accept` header negotiation:
+
+- `Accept: text/event-stream` → `StreamingResponse` (`text/event-stream`)
+- Any other accept value → existing JSON `ChatResponse` (backward compatible)
+
+### Implementation details
+
+1. Added `_stream_chat()` async generator in `app/main.py` that:
+   - Resolves workflow and conversation id via `asyncio.to_thread(...)`
+   - Calls blocking `workflow.run_streaming(message, bu_id, session_context)` via `asyncio.to_thread(...)`
+   - Iterates events safely through thread offloading and emits `data: {json}\n\n`
+   - Stops on client disconnect
+   - Emits terminal SSE error event on workflow failure
+2. Added `WorkflowEventResponse` API model in `app/models.py` for SSE payload shape.
+3. Added CORS middleware for Angular dev origins (`http://localhost:4200`, `http://127.0.0.1:4200`) and exposed SSE-related headers.
+4. Added endpoint tests in `tests/test_sse_endpoint.py` for:
+   - SSE happy-path stream payloads
+   - Accept negotiation (SSE vs JSON)
+   - SSE error event when streaming workflow fails
+   - Backward-compatible JSON behavior
+
+### Notes
+
+- No `sse-starlette` dependency added; raw FastAPI `StreamingResponse` is sufficient.
+- `WorkflowEvent` import is wired to `app.schemas` with temporary fallback until Mouse's streaming schema merge lands.
+
+---
+
+## 2026-05-21 — Trinity Angular frontend scaffold (Issue #23)
+
+**By:** Trinity  
+**Recorded:** 2026-05-21  
+**Branch:** (unknown)  
+**Issue:** #23
+
+### Decision
+
+Scaffold the Angular 19 standalone frontend at `src/frontend` with a chat-first architecture: MSAL-based auth guard/interceptor, typed SSE chat streaming service, and per-executor progress UI components.
+
+### Why
+
+This keeps frontend contracts explicit for the backend workflow events, enforces strict TypeScript, and provides transparent UX states (Intent → SQL → Executing → Result) including guardrail rejection details.
+
+### Implementation notes
+
+- Added `@azure/msal-angular` and `@azure/msal-browser` to `src/frontend/package.json`.
+- Implemented `core/auth` with `msal.config.ts`, `auth.guard.ts`, and `auth.interceptor.ts`.
+- Implemented typed chat models/services and standalone chat UI components.
+- Added environment configuration files and production file replacement.
+- Added mobile-first responsive styles with light/dark theme variables and animated progress dots (no generic spinner).
+
+---
+
+## 2026-05-21 — User directives: ACA infra, APIM routing, Calabrio UI reference
+
+**By:** Kiko de Ángel (via Copilot); recorded by Scribe  
+**Recorded:** 2026-05-21T11:15–11:21:00Z
+
+### Directive 1: ACA infrastructure ready
+
+**Time:** 2026-05-21T11:15:00Z
+
+**What:** Container Registry (calabriomafpocacr), Container Environment, and Container App have been created in rg-Calabriomafpoc. Currently running a dummy image. Update the image when the agent host Dockerfile is ready for deployment.
+
+**Why:** User request — captured for team memory. Infra is no longer deferred for the container layer.
+
+### Directive 2: Frontend routes through APIM
+
+**Time:** 2026-05-21T11:16:00Z
+
+**What:** The frontend NEVER talks directly to the backend. All traffic goes through APIM (calabriomafpoc-apim). This is part of the original architecture — APIM handles JWT validation, claim extraction, header injection, HMAC signing, and rate limiting.
+
+**Why:** User request — captured for team memory. Security and architecture constraint.
+
+### Directive 3: UI must match Calabrio reference design
+
+**Time:** 2026-05-21T11:21:00Z
+
+**What:** The frontend must visually match the existing Calabrio Supervisor Assist UI as closely as possible. Key design elements from the reference screenshots:
+- Left sidebar with Calabrio branding (red logo, dark sidebar with navigation items)
+- "Supervisor assist" header with info icon, "New chat" button (outlined, blue), Agent selector dropdown, green status dot + "Details" link
+- Chat area: clean white background, centered greeting on empty state ("Hello, {Name}! What can I help you with today?")
+- Message bubbles: user messages right-aligned (light purple/blue background), assistant messages left-aligned (light gray), no avatars
+- Data tables rendered inline with blue header row (Calabrio brand blue), white alternating rows
+- Input bar at bottom: "Type your message..." placeholder, blue send button (arrow icon), full width
+- AI disclaimer footer: "Supervisor assist is a generative AI-based solution and may make mistakes"
+- Overall: clean, professional, minimal — NOT a generic chatbot UI
+
+**Why:** User request — the PoC should look like a real Calabrio product, not a prototype.

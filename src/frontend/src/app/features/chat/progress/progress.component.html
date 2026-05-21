@@ -1,0 +1,12 @@
+﻿<section class="progress" aria-label="Executor progress">
+  <p class="progress__title">{{ executor }}</p>
+  <ol class="progress__steps">
+    <li
+      *ngFor="let step of steps"
+      [class]="'progress__step progress__step--' + getState(step.id)"
+    >
+      <span class="progress__dot" aria-hidden="true"></span>
+      <span>{{ step.label }}</span>
+    </li>
+  </ol>
+</section>

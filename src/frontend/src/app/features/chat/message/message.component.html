@@ -1,0 +1,17 @@
+﻿<article
+  class="message"
+  [class.message--user]="message.role === 'user'"
+  [class.message--assistant]="message.role === 'assistant'"
+>
+  <div class="message__bubble">
+    <div class="message__content" [innerHTML]="formattedContent"></div>
+
+    <div class="message__progress" *ngIf="message.role === 'assistant' && message.status === 'streaming' && executors.length">
+      <app-progress
+        *ngFor="let executor of executors"
+        [executor]="executor"
+        [events]="message.events ?? []"
+      ></app-progress>
+    </div>
+  </div>
+</article>
