@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T20:59:26.105+02:00: APIM CORS preflight must bypass auth
+- APIM operation policies that enforce JWT on secured endpoints must short-circuit `OPTIONS` in `<inbound>` with `<return-response>` before `<validate-jwt>`.
+- Preflight responses should reflect `Origin` and return `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Credentials`, and `Access-Control-Max-Age` to unblock browser CORS.
+- Adding the same `OPTIONS` handler to health/readiness policies keeps CORS behavior consistent across operations, even for GET-only routes.
+
 ### 2026-05-21T16:32:07.373+02:00: Workflow hardening for Foundry chat wiring
 - SQL guardrails must validate that `WHERE bu_id` matches the requested session BU value, not just that a BU predicate exists.
 - Frontend-facing `/chat` JSON and SSE errors must stay sanitized (`internal_error` + generic message); detailed exception text is server-log only.
