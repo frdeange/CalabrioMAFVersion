@@ -73,3 +73,8 @@ Addressed 2 new comments from Copilot Code Review round 3:
 - `.github/workflows/squad-issue-assign.yml`: guarded @copilot assignment step with `env.COPILOT_ASSIGN_TOKEN != ''` check, gated the prior acknowledgment step to avoid contradictory success message, added explicit user-facing warning comment when the PAT is missing.
 
 Rubber-duck (via Coordinator) caught a blind spot: the original plan would have posted both "@copilot has been assigned" AND "cannot assign" — fixed by adding `if:` guard to the earlier step.
+
+### 2026-05-21: DevTunnel local E2E operationalization
+- Added reusable DevTunnel automation scripts for persistent tunnel creation and daily host startup (`scripts/devtunnel-setup.ps1`, `scripts/devtunnel-start.ps1`).
+- Standardized local E2E runbook covering APIM named value switching (`backend-url`) between DevTunnel (local) and ACA (cloud).
+- Captured explicit APIM-first architecture for local dev (`Frontend → APIM → DevTunnel → local Docker backend → Docker MCP → Azure SQL`) to keep auth/CORS/JWT enforcement centralized.
