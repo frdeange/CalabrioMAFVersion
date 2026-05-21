@@ -40,7 +40,6 @@
   </inbound>
 
   <backend>
-    <base />
     <forward-request timeout="30" />
   </backend>
 
@@ -74,8 +73,6 @@
     <set-header name="Content-Type" exists-action="override">
       <value>application/json</value>
     </set-header>
-    <set-body>@{
-      return "{""error"":""apim_request_failed"",""message"":""Request could not be processed by API Management.""}";
-    }</set-body>
+    <set-body>{"error":"apim_request_failed","message":"Request could not be processed by API Management."}</set-body>
   </on-error>
 </policies>

@@ -4,7 +4,6 @@
     <set-backend-service base-url="{{backend-url}}" />
   </inbound>
   <backend>
-    <base />
     <forward-request timeout="10" />
   </backend>
   <outbound>
