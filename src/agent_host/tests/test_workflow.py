@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import MagicMock
@@ -279,3 +280,21 @@ def test_run_streaming_emits_frontend_event_contract() -> None:
 @pytest.mark.skipif(workflow_module is None, reason="app.workflow not available yet")
 def test_real_workflow_module_exists_for_future_integration() -> None:
     assert workflow_module is not None
+
+
+@pytest.mark.skipif(workflow_module is None, reason="app.workflow not available yet")
+def test_call_foundry_agent_failure_raises_workflow_execution_error() -> None:
+    workflow = workflow_module.WFMWorkflow.__new__(workflow_module.WFMWorkflow)
+    workflow._project = MagicMock()
+    workflow._project.agents.get.return_value = object()
+    workflow._openai = MagicMock()
+    workflow._openai.responses.create.side_effect = RuntimeError("Foundry unavailable")
+    workflow._known_agents = set()
+    workflow._known_agents_lock = threading.Lock()
+
+    with pytest.raises(workflow_module.WorkflowExecutionError, match="Foundry agent call failed"):
+        workflow._call_foundry_agent(
+            agent_name="wfm-intent-classifier",
+            conversation_id="conv-1",
+            message="headcount",
+        )

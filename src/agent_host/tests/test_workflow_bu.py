@@ -49,3 +49,17 @@ def test_bu_only_in_select_not_where_fails_validation() -> None:
 
     with pytest.raises(WorkflowExecutionError, match="mandatory BU filter"):
         workflow._validate_sql_plan(sql_plan, bu_id="BU-001")
+
+
+def test_bu_filter_with_wrong_value_fails_validation() -> None:
+    workflow = _workflow()
+    sql_plan = SqlPlan(
+        sql="SELECT agent_id FROM analytics.vw_PersonDetail WHERE bu_id = 'BU-999'",
+        tables_used=["analytics.vw_PersonDetail"],
+        assumptions=[],
+        explanation="filters wrong bu_id value",
+        error=None,
+    )
+
+    with pytest.raises(WorkflowExecutionError, match="mandatory BU filter"):
+        workflow._validate_sql_plan(sql_plan, bu_id="BU-001")

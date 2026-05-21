@@ -76,6 +76,8 @@ _workflow_lock = threading.Lock()
 _STREAM_DONE = object()
 _STREAM_POLL_SECONDS = 1.0
 _STREAM_EVENT_TIMEOUT_SECONDS = 30.0
+_INTERNAL_ERROR_CODE = "internal_error"
+_INTERNAL_ERROR_MESSAGE = "An unexpected error occurred. Please try again."
 
 
 def _get_workflow() -> Any:
@@ -290,7 +292,7 @@ async def _stream_chat(
 
             last_event_at = time.monotonic()
             yield _to_sse_frame(_to_jsonable_event(event))
-    except (RuntimeError, TimeoutError, ValueError) as exc:
+    except (RuntimeError, TimeoutError, ValueError):
         logger.exception(
             "chat_sse_workflow_failed",
             extra={
@@ -306,9 +308,8 @@ async def _stream_chat(
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "data": {
                     "conversation_id": conversation_id,
-                    "layer": "workflow",
-                    "reason": str(exc),
-                    "suggestion": "Review Foundry agent availability and MCP connectivity.",
+                    "error": _INTERNAL_ERROR_CODE,
+                    "message": _INTERNAL_ERROR_MESSAGE,
                 },
             }
         )
@@ -434,7 +435,7 @@ async def chat(
             conversation_id=result.get("conversation_id", conversation_id),
             execution_ms=execution_ms,
         )
-    except (RuntimeError, TimeoutError, ValueError) as exc:
+    except (RuntimeError, TimeoutError, ValueError):
         execution_ms = int((time.perf_counter() - started) * 1000)
         logger.exception(
             "chat_workflow_failed",
@@ -446,7 +447,8 @@ async def chat(
         )
         return ChatResponse(
             status="error",
-            message=f"Workflow execution failed: {exc}",
+            error=_INTERNAL_ERROR_CODE,
+            message=_INTERNAL_ERROR_MESSAGE,
             conversation_id=conversation_id,
             execution_ms=execution_ms,
         )

@@ -148,7 +148,7 @@ Issue #21 closed.
 - sqlglot exp.Table nodes expose 	able.db and 	able.name as string properties � never use 	able.args.get("db") which returns an Identifier object, not a string.
 - exp.Truncate does not exist in sqlglot; use exp.TruncateTable instead.
 - Presidio's US_SSN recognizer requires spaCy NLP context tokens that are absent in minimal inputs � in test environments without a full spaCy pipeline, SSN detection falls back to regex-based detection. Design tests to either disable the analyzer instance or use patterns that Presidio reliably detects (email at 1.0, phone with keyword at 0.75).
-- The 4 middleware layers (PromptShields, PII, HMAC, SQLValidator) must remain **unwired from workflow.py** at creation time � they are instantiated by uild_middleware_chain() and consumed by the wiring sprint, keeping each layer independently testable.
+- The 4 middleware layers (PromptShields, PII, HMAC, SQLValidator) must remain **unwired from workflow.py** at creation time; they are instantiated by build_middleware_chain() and consumed by the wiring sprint, keeping each layer independently testable.
 - Presidio emits noisy language-mismatch warnings at import for non-English recognizers; these can be suppressed in CI with --log-level ERROR.
 
 ### 2026-05-21T16:09:13.440+02:00: Workflow wiring for APIM identity + Foundry-backed SSE chat

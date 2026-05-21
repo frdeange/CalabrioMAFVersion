@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -177,9 +178,52 @@ def test_chat_sse_emits_error_event_when_workflow_fails(monkeypatch) -> None:
             "timestamp": payloads[0]["timestamp"],
             "data": {
                 "conversation_id": "conv-error",
-                "layer": "workflow",
-                "reason": "stream failed",
-                "suggestion": "Review Foundry agent availability and MCP connectivity.",
+                "error": "internal_error",
+                "message": "An unexpected error occurred. Please try again.",
+            },
+        }
+    ]
+
+
+def test_chat_sse_emits_error_event_on_stream_timeout(monkeypatch) -> None:
+    workflow = MagicMock()
+
+    def _slow_stream():
+        time.sleep(0.05)
+        yield {"event": "done", "executor": "workflow", "data": {"status": "completed"}}
+
+    workflow.run_streaming.return_value = _slow_stream()
+
+    monkeypatch.setattr(main, "_get_workflow", lambda: workflow)
+    monkeypatch.setattr(main.settings, "default_bu_id", "BU-001")
+    monkeypatch.setattr(main, "_STREAM_POLL_SECONDS", 0.01)
+    monkeypatch.setattr(main, "_STREAM_EVENT_TIMEOUT_SECONDS", 0.02)
+    monkeypatch.setattr(
+        main.foundry_manager,
+        "create_conversation",
+        MagicMock(return_value="conv-timeout"),
+    )
+
+    client = TestClient(main.app)
+    with client.stream(
+        "POST",
+        "/chat",
+        headers={"Accept": "text/event-stream"},
+        json={"message": "hello"},
+    ) as response:
+        body = "".join(response.iter_text())
+
+    assert response.status_code == 200
+    payloads = _read_sse_payloads(body)
+    assert payloads == [
+        {
+            "event": "error",
+            "executor": "workflow",
+            "timestamp": payloads[0]["timestamp"],
+            "data": {
+                "conversation_id": "conv-timeout",
+                "error": "internal_error",
+                "message": "An unexpected error occurred. Please try again.",
             },
         }
     ]

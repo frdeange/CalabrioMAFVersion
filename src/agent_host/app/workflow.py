@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from datetime import datetime, timezone
 from typing import Any, TypeVar
 from urllib.error import HTTPError, URLError
@@ -68,6 +69,7 @@ class WFMWorkflow:
             "executor": "wfm-query-executor",
         }
         self._known_agents: set[str] = set()
+        self._known_agents_lock = threading.Lock()
         self._workflow_builder = WorkflowBuilder  # TODO[S6]: replace with native WorkflowBuilder assembly.
         self._schema_mcp_tool = MCPStreamableHTTPTool  # TODO[S1]: bind local MCPStreamableHTTPTool instances.
         # TODO[S2]: apply AgentMiddleware / FunctionMiddleware stack here.
@@ -453,11 +455,11 @@ class WFMWorkflow:
             raise WorkflowExecutionError("SQL Builder produced a non-SELECT statement.")
         if ";" in statement.rstrip(";"):
             raise WorkflowExecutionError("SQL Builder produced multiple SQL statements.")
-        if not self._has_bu_filter_in_where(statement):
+        if not self._has_matching_bu_filter_in_where(statement, bu_id):
             raise WorkflowExecutionError("SQL Builder omitted the mandatory BU filter.")
         # TODO[S2]: run SQL pre-validation middleware before executeQuery.
 
-    def _has_bu_filter_in_where(self, statement: str) -> bool:
+    def _has_matching_bu_filter_in_where(self, statement: str, expected_bu_id: str) -> bool:
         try:
             parsed = sqlglot.parse_one(statement, read="tsql")
         except (
@@ -471,11 +473,29 @@ class WFMWorkflow:
         if where_clause is None:
             return False
 
-        for predicate in where_clause.find_all(exp.Predicate):
-            for column in predicate.find_all(exp.Column):
-                if column.name and column.name.lower() == "bu_id":
-                    return True
+        expected = expected_bu_id.strip().lower()
+        for predicate in where_clause.find_all(exp.EQ):
+            left = self._extract_bu_literal_if_matched(predicate.this, predicate.expression)
+            if left is not None and left == expected:
+                return True
+            right = self._extract_bu_literal_if_matched(predicate.expression, predicate.this)
+            if right is not None and right == expected:
+                return True
         return False
+
+    def _extract_bu_literal_if_matched(self, column_expr: Any, value_expr: Any) -> str | None:
+        if not isinstance(column_expr, exp.Column):
+            return None
+        if not column_expr.name or column_expr.name.lower() != "bu_id":
+            return None
+
+        if isinstance(value_expr, exp.Literal):
+            return str(value_expr.this).strip().strip("'").strip('"').lower()
+
+        if isinstance(value_expr, exp.Parameter):
+            return None
+
+        return str(value_expr).strip().strip("'").strip('"').lower()
 
     def _invoke_agent_structured(
         self,
@@ -565,25 +585,26 @@ class WFMWorkflow:
             raise self._wrap_foundry_exception(agent_name, exc) from exc
 
     def _ensure_agent_exists(self, agent_name: str) -> None:
-        if agent_name in self._known_agents:
-            return
-        try:
-            self._project.agents.get(agent_name)
-            self._known_agents.add(agent_name)
-        except ResourceNotFoundError as exc:
-            raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
-        except HttpResponseError as exc:
-            if getattr(exc, "status_code", None) == 404:
+        with self._known_agents_lock:
+            if agent_name in self._known_agents:
+                return
+            try:
+                self._project.agents.get(agent_name)
+                self._known_agents.add(agent_name)
+            except ResourceNotFoundError as exc:
                 raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
-            raise WorkflowExecutionError(
-                "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
-            ) from exc
-        except Exception as exc:
-            if "not found" in str(exc).lower():
-                raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
-            raise WorkflowExecutionError(
-                "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
-            ) from exc
+            except HttpResponseError as exc:
+                if getattr(exc, "status_code", None) == 404:
+                    raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
+                raise WorkflowExecutionError(
+                    "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
+                ) from exc
+            except Exception as exc:
+                if "not found" in str(exc).lower():
+                    raise WorkflowExecutionError(self._missing_agent_message(agent_name)) from exc
+                raise WorkflowExecutionError(
+                    "Foundry agent lookup failed for {0}: {1}".format(agent_name, exc)
+                ) from exc
 
     def _wrap_foundry_exception(self, agent_name: str, exc: Exception) -> WorkflowExecutionError:
         if isinstance(exc, ResourceNotFoundError):
@@ -710,7 +731,7 @@ class WFMWorkflow:
             return (
                 "No live data query is needed for this turn."
                 if not language.startswith("es")
-                else "Esta peticion no necesita una consulta de datos en vivo."
+                else "Esta petición no necesita una consulta de datos en vivo."
             )
         return (
             "This workflow can only help with safe WFM data requests."

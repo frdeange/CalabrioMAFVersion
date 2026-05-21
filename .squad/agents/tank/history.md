@@ -12,6 +12,11 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-21T16:32:07.373+02:00: Workflow hardening for Foundry chat wiring
+- SQL guardrails must validate that `WHERE bu_id` matches the requested session BU value, not just that a BU predicate exists.
+- Frontend-facing `/chat` JSON and SSE errors must stay sanitized (`internal_error` + generic message); detailed exception text is server-log only.
+- `WFMWorkflow._known_agents` uses a lock because the workflow singleton is shared across concurrent requests.
+
 ### 2026-05-21T15:31:03.551+02:00: APIM Host header derivation should follow API Settings service URL
 - Operation policies for `/health`, `/ready`, and `/chat` should derive `Host` from `context.Api.ServiceUrl` so routing follows the API Web service URL configured per environment.
 - Keep `backend-url` Named Value and API Web service URL aligned to the same DevTunnel port URL; this keeps per-developer setup to a single URL value.

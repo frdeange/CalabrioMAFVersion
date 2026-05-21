@@ -123,7 +123,8 @@ def test_chat_returns_error_response_when_workflow_raises(monkeypatch) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "error"
-    assert payload["message"] == "Workflow execution failed: workflow failure"
+    assert payload["error"] == "internal_error"
+    assert payload["message"] == "An unexpected error occurred. Please try again."
     assert payload["conversation_id"] == "conv-456"
     assert isinstance(payload["execution_ms"], int)
     workflow.run.assert_called_once_with(
@@ -200,3 +201,25 @@ def test_chat_serializes_workflow_model_and_passes_apim_identity(monkeypatch) ->
             },
         },
     )
+
+
+def test_chat_rejects_whitespace_only_message(monkeypatch) -> None:
+    workflow = MagicMock()
+    monkeypatch.setattr(main, "_get_workflow", lambda: workflow)
+
+    client = TestClient(main.app)
+    response = client.post("/chat", json={"message": "   "})
+
+    assert response.status_code == 422
+    workflow.run.assert_not_called()
+
+
+def test_chat_rejects_message_over_max_length(monkeypatch) -> None:
+    workflow = MagicMock()
+    monkeypatch.setattr(main, "_get_workflow", lambda: workflow)
+
+    client = TestClient(main.app)
+    response = client.post("/chat", json={"message": "a" * 4001})
+
+    assert response.status_code == 422
+    workflow.run.assert_not_called()
