@@ -6,6 +6,7 @@ Use APIM as the ingress while routing backend traffic to your local service thro
 ## Prerequisites
 - Docker Desktop (or local backend on port 8000)
 - DevTunnel CLI authenticated and available in PATH
+- Azure CLI authenticated (`az login`) before running `docker compose up`
 
 ## One-time setup
 Run:
