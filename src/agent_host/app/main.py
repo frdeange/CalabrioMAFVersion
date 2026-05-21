@@ -1,5 +1,6 @@
 import asyncio
 import atexit
+import base64
 import inspect
 import json
 import logging
@@ -9,6 +10,8 @@ import threading
 import time
 from collections.abc import AsyncGenerator
 from typing import Any
+
+from pydantic import BaseModel
 
 from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +56,12 @@ logger = _configure_logging()
 app = FastAPI(title="Agent Host", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_origins=[
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -68,6 +76,8 @@ _workflow_lock = threading.Lock()
 _STREAM_DONE = object()
 _STREAM_POLL_SECONDS = 1.0
 _STREAM_EVENT_TIMEOUT_SECONDS = 30.0
+_INTERNAL_ERROR_CODE = "internal_error"
+_INTERNAL_ERROR_MESSAGE = "An unexpected error occurred. Please try again."
 
 
 def _get_workflow() -> Any:
@@ -120,6 +130,80 @@ def _to_sse_frame(event: dict[str, Any]) -> str:
     return "data: {0}\n\n".format(json.dumps(event, ensure_ascii=False))
 
 
+def _result_to_dict(result: Any) -> dict[str, Any]:
+    if isinstance(result, dict):
+        return result
+    if isinstance(result, BaseModel):
+        return result.model_dump(mode="json", exclude_none=True)
+    if hasattr(result, "model_dump"):
+        return result.model_dump(mode="json", exclude_none=True)
+    if hasattr(result, "__dict__"):
+        return dict(result.__dict__)
+    return {}
+
+
+def _first_header(connection: Request, *names: str) -> str | None:
+    for name in names:
+        value = connection.headers.get(name)
+        if value:
+            return value
+    return None
+
+
+def _decode_jsonish_header(raw_value: str | None) -> list[str]:
+    if not raw_value:
+        return []
+
+    candidates = [raw_value]
+    try:
+        decoded = base64.b64decode(raw_value, validate=True).decode("utf-8")
+    except Exception:
+        decoded = None
+    if decoded:
+        candidates.insert(0, decoded)
+
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, list):
+            return [str(item) for item in parsed if str(item).strip()]
+
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+def _extract_user_context(connection: Request) -> dict[str, Any]:
+    user_context = {
+        "oid": _first_header(connection, "x-user-oid", "x-ms-client-principal-id"),
+        "tenant_id": _first_header(connection, "x-user-tid", "x-tenant-id"),
+        "name": _first_header(connection, "x-user-name", "x-ms-client-principal-name"),
+        "upn": _first_header(connection, "x-user-upn", "x-user-email"),
+        "roles": _decode_jsonish_header(_first_header(connection, "x-user-roles")),
+        "teams": _decode_jsonish_header(_first_header(connection, "x-user-teams")),
+    }
+    return {
+        key: value
+        for key, value in user_context.items()
+        if value not in (None, "", [], {})
+    }
+
+
+def _build_session_context(
+    connection: Request,
+    correlation_id: str | None,
+    conversation_id: str,
+) -> dict[str, Any]:
+    session_context: dict[str, Any] = {
+        "correlation_id": correlation_id,
+        "conversation_id": conversation_id,
+    }
+    user_context = _extract_user_context(connection)
+    if user_context:
+        session_context["user"] = user_context
+    return session_context
+
+
 def _drain_stream_to_queue(
     stream: Any,
     event_queue: queue.Queue[Any],
@@ -151,10 +235,11 @@ async def _stream_chat(
         workflow = await asyncio.to_thread(_get_workflow)
         if conversation_id is None:
             conversation_id = await asyncio.to_thread(foundry_manager.create_conversation)
-        session_context = {
-            "correlation_id": request.correlation_id,
-            "conversation_id": conversation_id,
-        }
+        session_context = _build_session_context(
+            connection,
+            request.correlation_id,
+            conversation_id,
+        )
 
         run_streaming = getattr(workflow, "run_streaming", None)
         if run_streaming is None:
@@ -207,7 +292,7 @@ async def _stream_chat(
 
             last_event_at = time.monotonic()
             yield _to_sse_frame(_to_jsonable_event(event))
-    except (RuntimeError, TimeoutError, ValueError) as exc:
+    except (RuntimeError, TimeoutError, ValueError):
         logger.exception(
             "chat_sse_workflow_failed",
             extra={
@@ -217,20 +302,27 @@ async def _stream_chat(
             },
         )
         yield _to_sse_frame(
-            WorkflowEventResponse(
-                event="error",
-                status="error",
-                message="Workflow execution failed",
-                conversation_id=conversation_id,
-                error=str(exc),
-            ).model_dump(mode="json", exclude_none=True)
+            {
+                "event": "error",
+                "executor": "workflow",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "data": {
+                    "conversation_id": conversation_id,
+                    "error": _INTERNAL_ERROR_CODE,
+                    "message": _INTERNAL_ERROR_MESSAGE,
+                },
+            }
         )
     finally:
         stop_event.set()
-        if stream is not None and hasattr(stream, "close"):
-            await asyncio.to_thread(stream.close)
         if producer_thread is not None and producer_thread.is_alive():
             await asyncio.to_thread(producer_thread.join, _STREAM_POLL_SECONDS)
+        if (
+            stream is not None
+            and hasattr(stream, "close")
+            and (producer_thread is None or not producer_thread.is_alive())
+        ):
+            await asyncio.to_thread(stream.close)
 
 
 @app.get("/health")
@@ -308,10 +400,11 @@ async def chat(
             conversation_id = await asyncio.to_thread(
                 foundry_manager.create_conversation
             )
-        session_context = {
-            "correlation_id": request.correlation_id,
-            "conversation_id": conversation_id,
-        }
+        session_context = _build_session_context(
+            connection,
+            request.correlation_id,
+            conversation_id,
+        )
 
         result = await _run_workflow(
             workflow,
@@ -320,18 +413,33 @@ async def chat(
             session_context,
         )
 
-        result = result if isinstance(result, dict) else {}
+        result = _result_to_dict(result)
+        intent_payload = result.get("intent")
+        sql_payload = result.get("sql_plan")
+        answer_payload = result.get("query_result")
         execution_ms = int((time.perf_counter() - started) * 1000)
         return ChatResponse(
             status=str(result.get("status", "ok")),
             message=str(result.get("message", "Workflow executed")),
-            intent=result.get("intent"),
-            sql=result.get("sql"),
-            answer=result.get("answer"),
+            intent=(
+                str(intent_payload.get("intent"))
+                if isinstance(intent_payload, dict) and intent_payload.get("intent") is not None
+                else result.get("intent")
+            ),
+            sql=(
+                str(sql_payload.get("sql"))
+                if isinstance(sql_payload, dict) and sql_payload.get("sql") is not None
+                else result.get("sql")
+            ),
+            answer=(
+                str(answer_payload.get("answer"))
+                if isinstance(answer_payload, dict) and answer_payload.get("answer") is not None
+                else result.get("answer")
+            ),
             conversation_id=result.get("conversation_id", conversation_id),
             execution_ms=execution_ms,
         )
-    except (RuntimeError, TimeoutError, ValueError) as exc:
+    except (RuntimeError, TimeoutError, ValueError):
         execution_ms = int((time.perf_counter() - started) * 1000)
         logger.exception(
             "chat_workflow_failed",
@@ -343,7 +451,8 @@ async def chat(
         )
         return ChatResponse(
             status="error",
-            message=f"Workflow execution failed: {exc}",
+            error=_INTERNAL_ERROR_CODE,
+            message=_INTERNAL_ERROR_MESSAGE,
             conversation_id=conversation_id,
             execution_ms=execution_ms,
         )

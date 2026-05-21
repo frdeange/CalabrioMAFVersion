@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -31,8 +32,24 @@ def test_chat_returns_sse_stream_when_requested(monkeypatch) -> None:
     workflow = MagicMock()
     workflow.run_streaming.return_value = iter(
         [
-            {"event": "intent", "message": "Intent classified"},
-            {"event": "done", "status": "completed"},
+            {
+                "event": "intent_resolved",
+                "executor": "intent",
+                "timestamp": "2026-05-21T16:09:13.440+02:00",
+                "data": {
+                    "conversation_id": "conv-sse",
+                    "intent": "DataQuery",
+                },
+            },
+            {
+                "event": "done",
+                "executor": "workflow",
+                "timestamp": "2026-05-21T16:09:13.440+02:00",
+                "data": {
+                    "conversation_id": "conv-sse",
+                    "status": "completed",
+                },
+            },
         ]
     )
     workflow.run = MagicMock()
@@ -49,7 +66,12 @@ def test_chat_returns_sse_stream_when_requested(monkeypatch) -> None:
     with client.stream(
         "POST",
         "/chat",
-        headers={"Accept": "text/event-stream", "Origin": "http://localhost:4200"},
+        headers={
+            "Accept": "text/event-stream",
+            "Origin": "http://localhost:8080",
+            "x-user-oid": "user-123",
+            "x-user-name": "Mouse Tester",
+        },
         json={"message": "hello"},
     ) as response:
         body = "".join(response.iter_text())
@@ -58,15 +80,35 @@ def test_chat_returns_sse_stream_when_requested(monkeypatch) -> None:
     assert response.headers["content-type"].startswith("text/event-stream")
     assert response.headers["cache-control"] == "no-cache"
     assert response.headers["x-accel-buffering"] == "no"
-    assert response.headers["access-control-allow-origin"] == "http://localhost:4200"
+    assert response.headers["access-control-allow-origin"] == "http://localhost:8080"
     assert _read_sse_payloads(body) == [
-        {"event": "intent", "message": "Intent classified"},
-        {"event": "done", "status": "completed"},
+        {
+            "event": "intent_resolved",
+            "executor": "intent",
+            "timestamp": "2026-05-21T16:09:13.440+02:00",
+            "data": {
+                "conversation_id": "conv-sse",
+                "intent": "DataQuery",
+            },
+        },
+        {
+            "event": "done",
+            "executor": "workflow",
+            "timestamp": "2026-05-21T16:09:13.440+02:00",
+            "data": {
+                "conversation_id": "conv-sse",
+                "status": "completed",
+            },
+        },
     ]
     workflow.run_streaming.assert_called_once_with(
         "hello",
         "BU-001",
-        {"correlation_id": None, "conversation_id": "conv-sse"},
+        {
+            "correlation_id": None,
+            "conversation_id": "conv-sse",
+            "user": {"oid": "user-123", "name": "Mouse Tester"},
+        },
     )
     workflow.run.assert_not_called()
 
@@ -132,9 +174,56 @@ def test_chat_sse_emits_error_event_when_workflow_fails(monkeypatch) -> None:
     assert payloads == [
         {
             "event": "error",
-            "status": "error",
-            "message": "Workflow execution failed",
-            "conversation_id": "conv-error",
-            "error": "stream failed",
+            "executor": "workflow",
+            "timestamp": payloads[0]["timestamp"],
+            "data": {
+                "conversation_id": "conv-error",
+                "error": "internal_error",
+                "message": "An unexpected error occurred. Please try again.",
+            },
+        }
+    ]
+
+
+def test_chat_sse_emits_error_event_on_stream_timeout(monkeypatch) -> None:
+    workflow = MagicMock()
+
+    def _slow_stream():
+        time.sleep(0.05)
+        yield {"event": "done", "executor": "workflow", "data": {"status": "completed"}}
+
+    workflow.run_streaming.return_value = _slow_stream()
+
+    monkeypatch.setattr(main, "_get_workflow", lambda: workflow)
+    monkeypatch.setattr(main.settings, "default_bu_id", "BU-001")
+    monkeypatch.setattr(main, "_STREAM_POLL_SECONDS", 0.01)
+    monkeypatch.setattr(main, "_STREAM_EVENT_TIMEOUT_SECONDS", 0.02)
+    monkeypatch.setattr(
+        main.foundry_manager,
+        "create_conversation",
+        MagicMock(return_value="conv-timeout"),
+    )
+
+    client = TestClient(main.app)
+    with client.stream(
+        "POST",
+        "/chat",
+        headers={"Accept": "text/event-stream"},
+        json={"message": "hello"},
+    ) as response:
+        body = "".join(response.iter_text())
+
+    assert response.status_code == 200
+    payloads = _read_sse_payloads(body)
+    assert payloads == [
+        {
+            "event": "error",
+            "executor": "workflow",
+            "timestamp": payloads[0]["timestamp"],
+            "data": {
+                "conversation_id": "conv-timeout",
+                "error": "internal_error",
+                "message": "An unexpected error occurred. Please try again.",
+            },
         }
     ]
