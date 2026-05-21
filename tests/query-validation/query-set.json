@@ -95,7 +95,7 @@
       "expected_tables": [
         "analytics.vw_AbsenceRequest"
       ],
-      "expected_sql_pattern": "SELECT.*(SUM|COUNT).*GROUP BY.*ORDER BY.*DESC.*(TOP|LIMIT)",
+      "expected_sql_pattern": "SELECT\\s+TOP\\s*\\(\\s*1\\s*\\).*(SUM|COUNT).*GROUP BY.*ORDER BY.*DESC",
       "expected_tool_calls": [
         "get_schema(analytics.vw_AbsenceRequest)",
         "execute_query"
@@ -143,7 +143,7 @@
       "expected_tables": [
         "analytics.vw_AbsenceRequest"
       ],
-      "expected_sql_pattern": "SELECT.*(SUM|COUNT).*FROM.*analytics.vw_AbsenceRequest.*WHERE.*Overtime.*GROUP BY.*ORDER BY.*DESC.*(TOP\\s+5|LIMIT\\s+5)",
+      "expected_sql_pattern": "SELECT\\s+TOP\\s*\\(\\s*5\\s*\\).*(SUM|COUNT).*FROM.*analytics.vw_AbsenceRequest.*WHERE.*Overtime.*GROUP BY.*ORDER BY.*DESC",
       "expected_tool_calls": [
         "get_schema(analytics.vw_AbsenceRequest)",
         "execute_query"
