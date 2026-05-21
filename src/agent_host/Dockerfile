@@ -13,7 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && \
 
 RUN pip install --no-cache-dir .
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN addgroup --system app && adduser --system --ingroup app --home /home/app app
+
+# Azure CLI config dir (host tokens mounted here via docker-compose volume)
+ENV AZURE_CONFIG_DIR=/home/app/.azure
 
 USER app
 
